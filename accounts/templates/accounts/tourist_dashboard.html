@@ -1,0 +1,1703 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tourist Dashboard | Smart Tourist Safety</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet Routing Machine CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --sidebar-bg: #0d1b2a;
+            --sidebar-accent: #1e3a5f;
+            --accent: #2ecc71;
+            --accent-hover: #27ae60;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --info: #2980b9;
+            --surface: #ffffff;
+            --bg: #f0f4f8;
+            --text-primary: #1a1a2e;
+            --text-secondary: #555;
+            --border: #e0e7ef;
+            --sidebar-width: 250px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: var(--bg);
+            overflow-x: hidden;
+            color: var(--text-primary);
+        }
+
+        /* ─── LAYOUT ─── */
+        .wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ─── SIDEBAR ─── */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--sidebar-bg);
+            color: #fff;
+            padding: 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-brand {
+            padding: 22px 20px 18px;
+            background: rgba(0, 0, 0, 0.25);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .sidebar-brand h2 {
+            font-size: 15px;
+            font-weight: 700;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sidebar-brand p {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 4px;
+        }
+
+        .sidebar-nav {
+            padding: 14px 12px;
+            flex: 1;
+        }
+
+        .nav-section-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: rgba(255, 255, 255, 0.35);
+            padding: 10px 8px 5px;
+        }
+
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: rgba(255, 255, 255, 0.75);
+            text-decoration: none;
+            padding: 11px 12px;
+            margin-bottom: 3px;
+            border-radius: 8px;
+            font-size: 13.5px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .sidebar a:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+        }
+
+        .sidebar a.active {
+            background: var(--accent);
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .sidebar a .nav-icon {
+            font-size: 17px;
+            min-width: 22px;
+            text-align: center;
+        }
+
+        .sidebar-footer {
+            padding: 14px 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .sidebar-footer a {
+            background: rgba(231, 76, 60, 0.18) !important;
+            color: #ff7675 !important;
+        }
+
+        .sidebar-footer a:hover {
+            background: var(--danger) !important;
+            color: #fff !important;
+        }
+
+        /* Mobile sidebar toggle */
+        .sidebar-toggle {
+            display: none;
+            position: fixed;
+            top: 14px;
+            left: 14px;
+            background: var(--sidebar-bg);
+            color: white;
+            border: none;
+            padding: 9px 13px;
+            border-radius: 7px;
+            cursor: pointer;
+            z-index: 1001;
+            font-size: 17px;
+        }
+
+        /* ─── MAIN ─── */
+        .main {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            width: calc(100% - var(--sidebar-width));
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* ─── TOPBAR ─── */
+        .topbar {
+            background: var(--surface);
+            padding: 14px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+            position: sticky;
+            top: 0;
+            z-index: 999;
+        }
+
+        .topbar-left h2 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .topbar-left p {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-logout {
+            background: var(--danger);
+            border: none;
+            padding: 9px 18px;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .btn-logout:hover {
+            background: #c0392b;
+        }
+
+        /* ─── VIEWS ─── */
+        .view {
+            display: none;
+            flex: 1;
+        }
+
+        .view.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ─── HOME VIEW ─── */
+        .map-container {
+            position: relative;
+            height: 55vh;
+            min-height: 320px;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .loading-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: var(--sidebar-bg);
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            padding: 18px 22px;
+            background: var(--surface);
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .info-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            max-height: 210px;
+            overflow-y: auto;
+        }
+
+        .info-card h3 {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        /* ─── RISK DISPLAY ─── */
+        .risk-badge {
+            font-size: 28px;
+            font-weight: 800;
+            text-align: center;
+            padding: 6px 0;
+        }
+
+        .risk-badge.high {
+            color: var(--danger);
+        }
+
+        .risk-badge.medium {
+            color: var(--warning);
+        }
+
+        .risk-badge.low {
+            color: var(--accent);
+        }
+
+        .risk-badge.safe {
+            color: var(--accent);
+        }
+
+        .risk-sub {
+            font-size: 12px;
+            text-align: center;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* ─── ALERT ITEMS ─── */
+        .alert-item {
+            background: #fff8e1;
+            padding: 8px 10px;
+            border-left: 3px solid var(--warning);
+            margin-bottom: 7px;
+            border-radius: 5px;
+            font-size: 12.5px;
+        }
+
+        .alert-item strong {
+            display: block;
+            margin-bottom: 2px;
+            color: var(--text-primary);
+        }
+
+        .alert-item.high {
+            background: #ffebee;
+            border-color: var(--danger);
+        }
+
+        .alert-item.low {
+            background: #e8f5e9;
+            border-color: var(--accent);
+        }
+
+        /* ─── HELP ITEMS ─── */
+        .help-item {
+            background: #e8f4fd;
+            padding: 8px 10px;
+            border-left: 3px solid var(--info);
+            margin-bottom: 7px;
+            border-radius: 5px;
+            font-size: 12.5px;
+        }
+
+        .help-item strong {
+            display: block;
+            color: var(--text-primary);
+        }
+
+        .help-item .dist {
+            color: #777;
+            font-size: 11px;
+        }
+
+        /* ─── SOS BUTTON ─── */
+        .btn-sos {
+            background: var(--danger);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            width: 100%;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            margin-top: 8px;
+        }
+
+        .btn-sos:hover {
+            background: #c0392b;
+            transform: scale(1.01);
+        }
+
+        .btn-sos:disabled {
+            background: #aaa;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ─── SECTION VIEWS (risk, alerts, help, sos, etc.) ─── */
+        .section-view {
+            padding: 28px 28px;
+            flex: 1;
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 18px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--border);
+        }
+
+        .card h3 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 14px;
+            color: var(--text-primary);
+        }
+
+        /* Detail alert item */
+        .zone-card {
+            padding: 16px;
+            border-left: 5px solid var(--warning);
+            background: #fff8e1;
+            border-radius: 8px;
+            margin-bottom: 14px;
+        }
+
+        .zone-card.high {
+            border-color: var(--danger);
+            background: #ffebee;
+        }
+
+        .zone-card.low {
+            border-color: var(--accent);
+            background: #e8f5e9;
+        }
+
+        .zone-card h4 {
+            margin-bottom: 8px;
+            font-size: 15px;
+            color: var(--text-primary);
+        }
+
+        .zone-card p {
+            font-size: 13px;
+            color: #555;
+            margin: 3px 0;
+        }
+
+        /* Help center detail */
+        .help-card {
+            padding: 16px;
+            border-left: 5px solid var(--info);
+            background: #e8f4fd;
+            border-radius: 8px;
+            margin-bottom: 14px;
+        }
+
+        .help-card h4 {
+            margin-bottom: 8px;
+            font-size: 15px;
+            color: var(--text-primary);
+        }
+
+        .help-card p {
+            font-size: 13px;
+            color: #555;
+            margin: 3px 0;
+        }
+
+        .btn-route {
+            background: var(--info);
+            color: white;
+            border: none;
+            padding: 7px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .btn-route:hover {
+            background: #1a6fa8;
+        }
+
+        /* Profile / Placeholder */
+        .placeholder-block {
+            background: var(--bg);
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        .placeholder-block .ph-icon {
+            font-size: 48px;
+            margin-bottom: 14px;
+        }
+
+        /* Profile card */
+        .profile-field {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 13px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+        }
+
+        .profile-field:last-child {
+            border-bottom: none;
+        }
+
+        .profile-field label {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .profile-field span {
+            color: var(--text-primary);
+        }
+
+        /* Report form */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text-secondary);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: border 0.2s;
+            background: var(--bg);
+            color: var(--text-primary);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: var(--accent);
+        }
+
+        .btn-submit {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 11px 28px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-submit:hover {
+            background: var(--accent-hover);
+        }
+
+        /* Status message */
+        .status-msg {
+            font-size: 13px;
+            margin-top: 10px;
+            padding: 8px 14px;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .status-msg.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            display: block;
+        }
+
+        .status-msg.error {
+            background: #ffebee;
+            color: #c62828;
+            display: block;
+        }
+
+        .status-msg.info {
+            background: #e3f2fd;
+            color: #1565c0;
+            display: block;
+        }
+
+        /* Danger Zone Modal */
+        .danger-modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.82);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .danger-modal-overlay.active {
+            display: flex;
+        }
+
+        .danger-modal {
+            background: #fff;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 480px;
+            width: 92%;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+            animation: dangerFlash 1s ease-in-out infinite;
+        }
+
+        @keyframes dangerFlash {
+
+            0%,
+            100% {
+                border: 5px solid #e53935;
+            }
+
+            50% {
+                border: 5px solid #ff6f00;
+            }
+        }
+
+        .danger-modal-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .danger-modal-icon {
+            font-size: 56px;
+            animation: shake 0.5s ease-in-out infinite;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
+        }
+
+        .danger-modal-header h2 {
+            color: #e53935;
+            font-size: 26px;
+            margin: 10px 0 4px;
+        }
+
+        .danger-info {
+            background: #fff8e1;
+            padding: 14px;
+            border-radius: 8px;
+            margin-bottom: 14px;
+        }
+
+        .danger-info p {
+            margin: 6px 0;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .danger-info strong {
+            color: #0f2027;
+        }
+
+        .danger-instructions {
+            background: #ffebee;
+            padding: 14px;
+            border-radius: 8px;
+            border-left: 4px solid #e53935;
+        }
+
+        .danger-instructions h4 {
+            color: #e53935;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .danger-instructions ul {
+            margin-left: 18px;
+            color: #666;
+            font-size: 13px;
+        }
+
+        .danger-instructions li {
+            margin: 4px 0;
+        }
+
+        .btn-danger-close {
+            background: #e53935;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 16px;
+        }
+
+        .btn-danger-close:hover {
+            background: #c62828;
+        }
+
+        /* Pulse marker */
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(229, 57, 53, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(229, 57, 53, 0);
+            }
+        }
+
+        .pulse-marker {
+            animation: pulse 2s infinite;
+        }
+
+        /* No-data state */
+        .empty-state {
+            color: #aaa;
+            font-size: 13px;
+            text-align: center;
+            padding: 16px 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 1100px) {
+            .cards-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .sidebar-toggle {
+                display: block;
+            }
+
+            .main {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .topbar {
+                padding: 14px 16px 14px 56px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Mobile Toggle -->
+    <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">☰</button>
+
+    <div class="wrapper">
+
+        <!-- ===== SIDEBAR ===== -->
+        <div class="sidebar" id="sidebar">
+
+            <div class="sidebar-brand">
+                <h2>🛡️ Tourist Panel</h2>
+                <p>Smart Safety System</p>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section-label">Overview</div>
+                <a id="nav-home" onclick="showView('home')" class="active">
+                    <span class="nav-icon">🏠</span> Dashboard
+                </a>
+                <a id="nav-risk" onclick="showView('risk')">
+                    <span class="nav-icon">📊</span> Risk Level
+                </a>
+
+                <div class="nav-section-label" style="margin-top:8px;">Alerts & Safety</div>
+                <a id="nav-alerts" onclick="showView('alerts')">
+                    <span class="nav-icon">🚨</span> Danger Zones
+                </a>
+                <a id="nav-help" onclick="showView('help')">
+                    <span class="nav-icon">🏥</span> Help Centers
+                </a>
+                <a id="nav-sos" onclick="showView('sos')">
+                    <span class="nav-icon">🆘</span> Emergency SOS
+                </a>
+
+                <div class="nav-section-label" style="margin-top:8px;">My Account</div>
+                <a id="nav-notifications" onclick="showView('notifications')">
+                    <span class="nav-icon">🔔</span> Notifications
+                </a>
+                <a id="nav-profile" onclick="showView('profile')">
+                    <span class="nav-icon">👤</span> Profile
+            </nav>
+
+            <div class="sidebar-footer">
+                <a onclick="doLogout()">
+                    <span class="nav-icon">🚪</span> Logout
+                </a>
+            </div>
+        </div>
+
+        <!-- ===== MAIN ===== -->
+        <div class="main">
+
+            <!-- Topbar -->
+            <div class="topbar">
+                <div class="topbar-left">
+                    <h2 id="topbarTitle">🏠 Dashboard Overview</h2>
+                    <p id="topbarSub">Welcome, {{ user.username }} &nbsp;|&nbsp; Smart Tourist Safety System</p>
+                </div>
+                <div class="topbar-right">
+                    <button class="btn-logout" onclick="doLogout()">🚪 Logout</button>
+                </div>
+            </div>
+
+            <!-- =================== VIEW: HOME =================== -->
+            <div class="view active" id="view-home">
+                <div class="map-container">
+                    <div id="map"></div>
+                    <div class="loading-badge" id="loadingBadge">🔄 Updating…</div>
+                </div>
+
+                <div class="cards-grid">
+                    <!-- Live Risk -->
+                    <div class="info-card">
+                        <h3>⚠️ Live Risk Level</h3>
+                        <div class="risk-badge medium" id="riskLevel">Medium</div>
+                        <p class="risk-sub" id="riskDesc">Analysing nearby zones…</p>
+                    </div>
+
+                    <!-- Nearby Alerts -->
+                    <div class="info-card">
+                        <h3>🚨 Nearby Danger Zones</h3>
+                        <div id="homeAlertsList">
+                            <p class="empty-state">Loading alerts…</p>
+                        </div>
+                    </div>
+
+                    <!-- Help Centers -->
+                    <div class="info-card">
+                        <h3>🏥 Nearby Help Centers</h3>
+                        <div id="homeHelpList">
+                            <p class="empty-state">Loading help centers…</p>
+                        </div>
+                    </div>
+
+                    <!-- SOS -->
+                    <div class="info-card">
+                        <h3>🆘 Emergency SOS</h3>
+                        <p style="font-size:12.5px;color:#555;margin-bottom:8px;">
+                            Send your location to the nearest authority instantly.
+                        </p>
+                        <button class="btn-sos" id="sosButtonHome" onclick="sendSOS('home')">SEND SOS</button>
+                        <p id="sosStatusHome" class="status-msg"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =================== VIEW: RISK =================== -->
+            <div class="view" id="view-risk">
+                <div class="section-view">
+                    <div class="section-title">📊 Live Risk Assessment</div>
+
+                    <div class="card">
+                        <h3>Current Risk Level</h3>
+                        <div class="risk-badge medium" id="riskLevelDetail" style="font-size:36px;">Medium</div>
+                        <p style="text-align:center;font-size:14px;color:#666;margin-top:8px;" id="riskDescDetail">
+                            Analysing nearby zones…
+                        </p>
+                    </div>
+
+                    <div class="card">
+                        <h3>Risk Factors</h3>
+                        <div id="riskFactors">
+                            <p class="empty-state">Loading risk analysis…</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =================== VIEW: ALERTS =================== -->
+            <div class="view" id="view-alerts">
+                <div class="section-view">
+                    <div class="section-title">🚨 Nearby Danger Zones</div>
+                    <div class="card">
+                        <div id="alertsDetail">
+                            <p class="empty-state">Loading danger zones…</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =================== VIEW: HELP =================== -->
+            <div class="view" id="view-help">
+                <div class="section-view">
+                    <div class="section-title">🏥 Nearby Help Centers</div>
+                    <div class="card">
+                        <div id="helpDetail">
+                            <p class="empty-state">Loading help centers…</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =================== VIEW: SOS =================== -->
+            <div class="view" id="view-sos">
+                <div class="section-view">
+                    <div class="section-title">🆘 Emergency SOS System</div>
+
+                    <div class="card">
+                        <h3>Send Emergency Alert</h3>
+                        <p style="color:#555;font-size:14px;margin-bottom:16px;">
+                            Press SOS to instantly share your GPS location with the nearest police station or hospital.
+                        </p>
+                        <button class="btn-sos" id="sosButtonDetail" onclick="sendSOS('detail')"
+                            style="max-width:380px;">
+                            🆘 SEND EMERGENCY SOS
+                        </button>
+                        <p id="sosStatusDetail" class="status-msg"></p>
+                    </div>
+
+                    <div class="card">
+                        <h3>⚠️ When to Use SOS</h3>
+                        <ul style="margin-left:20px;color:#555;font-size:14px;line-height:1.9;">
+                            <li>Medical emergencies</li>
+                            <li>Crime or threat situations</li>
+                            <li>Natural disasters</li>
+                            <li>Lost or stranded in a dangerous area</li>
+                            <li>Any life-threatening situation</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- =================== VIEW: NOTIFICATIONS =================== -->
+            <div class="view" id="view-notifications">
+                <div class="section-view">
+                    <div class="section-title">🔔 Notifications</div>
+                    <div class="card">
+                        <div class="placeholder-block">
+                            <div class="ph-icon">🔔</div>
+                            <strong>No new notifications.</strong>
+                            <p style="margin-top:8px;">You'll be alerted when admin posts safety updates or when you
+                                enter a danger zone.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =================== VIEW: PROFILE =================== -->
+            <div class="view" id="view-profile">
+                <div class="section-view">
+                    <div class="section-title">👤 My Profile</div>
+
+                    <!-- Profile Info -->
+                    <div class="card">
+                        <h3>Account Information</h3>
+                        <div class="profile-field">
+                            <label>Username</label>
+                            <span>{{ user.username }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <label>Email</label>
+                            <span>{{ user.email|default:"—" }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <label>Account Type</label>
+                            <span>Tourist</span>
+                        </div>
+                        <div class="profile-field">
+                            <label>Member Since</label>
+                            <span>{{ user.date_joined|date:"N j, Y" }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Change Password -->
+                    <div class="card">
+                        <h3>🔒 Change Password</h3>
+                        <p style="font-size:13px;color:#666;margin-bottom:18px;">
+                            Choose a strong password to keep your account secure.
+                        </p>
+                        <form id="changePasswordForm" onsubmit="changePassword(event)" autocomplete="off">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <label for="oldPassword">Current Password</label>
+                                <input type="password" id="oldPassword" name="old_password"
+                                    placeholder="Enter current password" required autocomplete="current-password">
+                            </div>
+                            <div class="form-group">
+                                <label for="newPassword1">New Password</label>
+                                <input type="password" id="newPassword1" name="new_password1"
+                                    placeholder="Enter new password" required autocomplete="new-password">
+                            </div>
+                            <div class="form-group">
+                                <label for="newPassword2">Confirm New Password</label>
+                                <input type="password" id="newPassword2" name="new_password2"
+                                    placeholder="Repeat new password" required autocomplete="new-password">
+                            </div>
+                            <button class="btn-submit" type="submit" id="changePwdBtn">🔒 Update Password</button>
+                            <p id="changePwdStatus" class="status-msg" style="margin-top:12px;"></p>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /.main -->
+    </div><!-- /.wrapper -->
+
+    <!-- ===== DANGER ZONE MODAL ===== -->
+    <div class="danger-modal-overlay" id="dangerModalOverlay">
+        <div class="danger-modal">
+            <div class="danger-modal-header">
+                <div class="danger-modal-icon">⚠️</div>
+                <h2>DANGER ZONE ALERT</h2>
+            </div>
+            <div class="danger-info">
+                <p><strong>Zone Name:</strong> <span id="modalZoneName">–</span></p>
+                <p><strong>Severity:</strong> <span id="modalSeverity" style="font-weight:bold;">–</span></p>
+                <p><strong>Risk Type:</strong> <span id="modalRiskType">–</span></p>
+                <p><strong>Distance:</strong> <span id="modalDistance">–</span></p>
+            </div>
+            <div class="danger-instructions">
+                <h4>🛡️ Safety Instructions</h4>
+                <ul>
+                    <li>Stay alert and aware of your surroundings</li>
+                    <li>Avoid the danger zone if possible</li>
+                    <li>Keep emergency contacts ready</li>
+                    <li>Follow local authority warnings</li>
+                    <li>Use the SOS button if you need immediate help</li>
+                </ul>
+            </div>
+            <button class="btn-danger-close" onclick="closeDangerModal()">I UNDERSTAND</button>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+
+    <script>
+        // ============================================================
+        //  GLOBAL STATE
+        // ============================================================
+        let map = null;
+        let mapInitialised = false;
+        let touristMarker = null;
+        let touristLat = null;
+        let touristLon = null;
+        let dangerMarkers = [];
+        let placeMarkers = [];
+        let routingControl = null;
+
+        // Geofence
+        let watchId = null;
+        let currentDangerZoneId = null;
+        let notificationPermission = 'default';
+
+        // Lazy-load cache
+        let nearbyData = null;          // {zones, places}
+        let nearbyFetchedAt = 0;        // timestamp ms
+        let nearbyFetchInFlight = false;
+        const STALE_MS = 30000;         // 30s before re-fetch
+
+        // View metadata
+        const VIEW_META = {
+            home: { title: '🏠 Dashboard Overview' },
+            risk: { title: '📊 Live Risk Assessment' },
+            alerts: { title: '🚨 Nearby Danger Zones' },
+            help: { title: '🏥 Nearby Help Centers' },
+            sos: { title: '🆘 Emergency SOS' },
+            notifications: { title: '🔔 Notifications' },
+            profile: { title: '👤 My Profile' },
+        };
+
+        // ============================================================
+        //  SPA ROUTER — showView()
+        // ============================================================
+        function showView(id) {
+            // Update sidebar active link
+            document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+            const navEl = document.getElementById('nav-' + id);
+            if (navEl) navEl.classList.add('active');
+
+            // Hide all views, show selected
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            const target = document.getElementById('view-' + id);
+            if (target) target.classList.add('active');
+
+            // Update topbar
+            const meta = VIEW_META[id] || {};
+            document.getElementById('topbarTitle').textContent = meta.title || id;
+
+            // Lazy-load section content
+            switch (id) {
+                case 'home':
+                    initMapOnce();
+                    refreshNearbyIfStale();
+                    break;
+                case 'risk':
+                    populateRiskView();
+                    break;
+                case 'alerts':
+                    populateAlertsView();
+                    break;
+                case 'help':
+                    populateHelpView();
+                    break;
+            }
+
+            // Close mobile sidebar
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('open');
+            }
+        }
+
+        // ============================================================
+        //  MAP — initialise only once, when home is shown
+        // ============================================================
+        function initMapOnce() {
+            if (mapInitialised) return;
+            mapInitialised = true;
+
+            map = L.map('map').setView([10.5276, 76.2144], 13); // Thrissur default
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            requestNotificationPermission();
+            startLocationTracking();
+
+            // First fetch after 2s (to allow GPS to get fix)
+            setTimeout(() => { if (touristLat) fetchNearbyData(); }, 2000);
+
+            // Auto-refresh every 15s
+            setInterval(() => { if (touristLat) fetchNearbyData(); }, 15000);
+        }
+
+        // ============================================================
+        //  NEARBY DATA — single fetch, shared across all views
+        // ============================================================
+        function isDataStale() {
+            return !nearbyData || (Date.now() - nearbyFetchedAt > STALE_MS);
+        }
+
+        function refreshNearbyIfStale() {
+            if (touristLat && isDataStale() && !nearbyFetchInFlight) {
+                fetchNearbyData();
+            }
+        }
+
+        function fetchNearbyData() {
+            if (!touristLat || !touristLon) return;
+            if (nearbyFetchInFlight) return;
+
+            nearbyFetchInFlight = true;
+            const badge = document.getElementById('loadingBadge');
+            if (badge) badge.style.display = 'block';
+
+            fetch(`/api/nearby-data/?lat=${touristLat}&lon=${touristLon}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        nearbyData = data;
+                        nearbyFetchedAt = Date.now();
+                        applyNearbyDataToHome(data.zones, data.places);
+                    }
+                })
+                .catch(e => console.error('Nearby data error:', e))
+                .finally(() => {
+                    nearbyFetchInFlight = false;
+                    if (badge) badge.style.display = 'none';
+                });
+        }
+
+        // ============================================================
+        //  POPULATE HOME VIEW
+        // ============================================================
+        function applyNearbyDataToHome(zones, places) {
+            updateMapMarkers(zones, places);
+            renderHomeAlerts(zones);
+            renderHomeHelp(places);
+            renderHomeRisk(zones);
+        }
+
+        function renderHomeRisk(zones) {
+            const div = document.getElementById('riskLevel');
+            const desc = document.getElementById('riskDesc');
+            const { text, cls, description } = calcRisk(zones);
+            div.textContent = text;
+            div.className = 'risk-badge ' + cls;
+            desc.textContent = description;
+        }
+
+        function renderHomeAlerts(zones) {
+            const el = document.getElementById('homeAlertsList');
+            if (!zones || zones.length === 0) {
+                el.innerHTML = '<p class="empty-state" style="color:#4caf50;">✓ No alerts in your area</p>';
+                return;
+            }
+            el.innerHTML = zones.slice(0, 5).map(z => `
+            <div class="alert-item ${z.severity.toLowerCase()}">
+                <strong>${z.name} (${z.distance} km)</strong>
+                ${z.risk_type} — ${z.severity}
+            </div>
+        `).join('');
+        }
+
+        function renderHomeHelp(places) {
+            const el = document.getElementById('homeHelpList');
+            if (!places || places.length === 0) {
+                el.innerHTML = '<p class="empty-state">No help centers nearby</p>';
+                return;
+            }
+            el.innerHTML = places.slice(0, 4).map(p => `
+            <div class="help-item">
+                <strong>${placeIcon(p.type)} ${p.name}</strong>
+                <span class="dist">${p.distance} km away</span>
+            </div>
+        `).join('');
+        }
+
+        // ============================================================
+        //  POPULATE RISK VIEW (lazy)
+        // ============================================================
+        function populateRiskView() {
+            if (!nearbyData) {
+                document.getElementById('riskLevelDetail').textContent = 'Waiting for location…';
+                document.getElementById('riskDescDetail').textContent = '';
+                document.getElementById('riskFactors').innerHTML = '<p class="empty-state">Enable GPS and open Dashboard first.</p>';
+                fetchNearbyDataForView(populateRiskView);
+                return;
+            }
+            const zones = nearbyData.zones;
+            const { text, cls, description } = calcRisk(zones);
+
+            const lv = document.getElementById('riskLevelDetail');
+            lv.textContent = text;
+            lv.className = 'risk-badge ' + cls;
+            document.getElementById('riskDescDetail').textContent = description;
+
+            const high = zones.filter(z => z.severity === 'High');
+            const med = zones.filter(z => z.severity === 'Medium');
+            const low = zones.filter(z => z.severity === 'Low');
+
+            let html = '';
+            if (high.length) html += factorBlock('#ffebee', '#e53935', `⚠️ High Risk Zones: ${high.length}`, 'High severity danger zones detected. Exercise extreme caution.');
+            if (med.length) html += factorBlock('#fff3e0', '#ff9800', `⚠️ Medium Risk Zones: ${med.length}`, 'Moderate risk zones detected. Stay alert and informed.');
+            if (low.length) html += factorBlock('#e8f5e9', '#4caf50', `✓ Low Risk Zones: ${low.length}`, 'Minor risk zones detected. Area is generally safe.');
+            if (!zones.length) html += factorBlock('#e8f5e9', '#4caf50', '✓ All Clear', 'No danger zones in your area. Enjoy your trip safely!');
+
+            document.getElementById('riskFactors').innerHTML = html;
+        }
+
+        function factorBlock(bg, color, title, text) {
+            return `<div style="background:${bg};padding:14px;border-radius:8px;margin-bottom:10px;">
+            <h4 style="color:${color};margin-bottom:8px;">${title}</h4>
+            <p style="color:#666;font-size:13px;">${text}</p>
+        </div>`;
+        }
+
+        // ============================================================
+        //  POPULATE ALERTS VIEW (lazy)
+        // ============================================================
+        function populateAlertsView() {
+            if (!nearbyData) {
+                document.getElementById('alertsDetail').innerHTML = '<p class="empty-state">Enable GPS and open Dashboard first.</p>';
+                fetchNearbyDataForView(populateAlertsView);
+                return;
+            }
+            const zones = nearbyData.zones;
+            if (!zones.length) {
+                document.getElementById('alertsDetail').innerHTML = '<p style="color:#4caf50;font-size:15px;">✓ No danger zones detected near you. Stay safe!</p>';
+                return;
+            }
+            document.getElementById('alertsDetail').innerHTML = zones.map(z => {
+                const color = z.severity === 'High' ? '#e53935' : z.severity === 'Medium' ? '#ff9800' : '#ffc107';
+                return `<div class="zone-card ${z.severity.toLowerCase()}">
+                <h4>⚠️ ${z.name}</h4>
+                <p><strong>Type:</strong> ${z.risk_type}</p>
+                <p><strong>Severity:</strong> <span style="color:${color};font-weight:700;">${z.severity}</span></p>
+                <p><strong>Distance:</strong> ${z.distance} km from your location</p>
+                ${z.additional_details ? `<p><strong>Details:</strong> ${z.additional_details}</p>` : ''}
+            </div>`;
+            }).join('');
+        }
+
+        // ============================================================
+        //  POPULATE HELP VIEW (lazy)
+        // ============================================================
+        function populateHelpView() {
+            if (!nearbyData) {
+                document.getElementById('helpDetail').innerHTML = '<p class="empty-state">Enable GPS and open Dashboard first.</p>';
+                fetchNearbyDataForView(populateHelpView);
+                return;
+            }
+            const places = nearbyData.places;
+            if (!places.length) {
+                document.getElementById('helpDetail').innerHTML = '<p class="empty-state">No help centers found nearby.</p>';
+                return;
+            }
+            document.getElementById('helpDetail').innerHTML = places.map(p => `
+            <div class="help-card">
+                <h4>${placeIcon(p.type)} ${p.name}</h4>
+                <p><strong>Type:</strong> ${p.type}</p>
+                <p><strong>Distance:</strong> ${p.distance} km from your location</p>
+                ${p.description ? `<p><strong>Description:</strong> ${p.description}</p>` : ''}
+                <button class="btn-route" onclick="getRouteAndGoHome(${p.latitude}, ${p.longitude}, '${p.name.replace(/'/g, "\\'")}')">
+                    🗺️ Get Directions
+                </button>
+            </div>
+        `).join('');
+        }
+
+        // Helper: fetch if not yet available, then call callback
+        function fetchNearbyDataForView(cb) {
+            if (touristLat && !nearbyFetchInFlight) {
+                nearbyFetchInFlight = true;
+                fetch(`/api/nearby-data/?lat=${touristLat}&lon=${touristLon}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            nearbyData = data;
+                            nearbyFetchedAt = Date.now();
+                            applyNearbyDataToHome(data.zones, data.places);
+                            cb();
+                        }
+                    })
+                    .catch(e => console.error(e))
+                    .finally(() => { nearbyFetchInFlight = false; });
+            }
+        }
+
+        // ============================================================
+        //  MAP MARKERS
+        // ============================================================
+        function updateMapMarkers(zones, places) {
+            if (!map) return;
+
+            // Clear old markers
+            dangerMarkers.forEach(m => map.removeLayer(m));
+            dangerMarkers = [];
+            placeMarkers.forEach(m => map.removeLayer(m));
+            placeMarkers = [];
+
+            zones.forEach(zone => {
+                const color = zone.severity === 'High' ? '#e53935' : zone.severity === 'Medium' ? '#ff9800' : '#ffc107';
+                const blink = zone.severity === 'High';
+                const icon = L.divIcon({
+                    className: '',
+                    html: `<div class="${blink ? 'pulse-marker' : ''}" style="background:${color};width:14px;height:14px;border-radius:50%;border:2px solid white;"></div>`,
+                    iconSize: [14, 14]
+                });
+                const m = L.marker([zone.latitude, zone.longitude], { icon })
+                    .addTo(map)
+                    .bindPopup(`<b>⚠️ ${zone.name}</b><br><b>Severity:</b> <span style="color:${color}">${zone.severity}</span><br><b>Type:</b> ${zone.risk_type}<br><b>Distance:</b> ${zone.distance} km`);
+                dangerMarkers.push(m);
+            });
+
+            places.forEach(place => {
+                const icon = L.divIcon({
+                    className: '',
+                    html: `<div style="font-size:22px;">${placeIcon(place.type)}</div>`,
+                    iconSize: [28, 28]
+                });
+                const m = L.marker([place.latitude, place.longitude], { icon })
+                    .addTo(map)
+                    .bindPopup(`<b>${placeIcon(place.type)} ${place.name}</b><br><b>Type:</b> ${place.type}<br><b>Distance:</b> ${place.distance} km
+                    <br><button onclick="getRouteAndGoHome(${place.latitude},${place.longitude},'${place.name.replace(/'/g, "\\'")}')"
+                    style="background:#2980b9;color:white;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;margin-top:5px;">Get Route</button>`);
+                placeMarkers.push(m);
+            });
+        }
+
+        // ============================================================
+        //  ROUTING
+        // ============================================================
+        function getRouteAndGoHome(destLat, destLon, placeName) {
+            showView('home');
+            setTimeout(() => {
+                if (!map || !touristLat) return;
+                if (routingControl) map.removeControl(routingControl);
+                routingControl = L.Routing.control({
+                    waypoints: [L.latLng(touristLat, touristLon), L.latLng(destLat, destLon)],
+                    routeWhileDragging: false,
+                    showAlternatives: false,
+                    lineOptions: { styles: [{ color: '#2980b9', weight: 4 }] }
+                }).addTo(map);
+            }, 200);
+        }
+
+        // ============================================================
+        //  LOCATION TRACKING
+        // ============================================================
+        function startLocationTracking() {
+            if (!navigator.geolocation) { alert('Geolocation not supported.'); return; }
+            watchId = navigator.geolocation.watchPosition(
+                pos => {
+                    touristLat = pos.coords.latitude;
+                    touristLon = pos.coords.longitude;
+                    checkDangerZone(touristLat, touristLon);
+
+                    if (touristMarker) {
+                        touristMarker.setLatLng([touristLat, touristLon]);
+                    } else {
+                        const icon = L.divIcon({
+                            className: 'pulse-marker',
+                            html: '<div style="background:#2196f3;width:18px;height:18px;border-radius:50%;border:3px solid white;"></div>',
+                            iconSize: [18, 18]
+                        });
+                        touristMarker = L.marker([touristLat, touristLon], { icon })
+                            .addTo(map)
+                            .bindPopup('<b>📍 You are here</b>');
+                        map.setView([touristLat, touristLon], 14);
+                    }
+                },
+                err => console.error('GPS error:', err),
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+            );
+        }
+
+        // ============================================================
+        //  GEOFENCE CHECK
+        // ============================================================
+        function checkDangerZone(lat, lon) {
+            fetch('/api/check-danger-zone/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                body: JSON.stringify({ latitude: lat, longitude: lon })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.inside && currentDangerZoneId !== data.zone_id) {
+                        currentDangerZoneId = data.zone_id;
+                        showDangerModal(data);
+                        showBrowserNotification(data);
+                        playAlertBeep();
+                    } else if (!data.inside) {
+                        currentDangerZoneId = null;
+                    }
+                })
+                .catch(e => console.error('Geofence error:', e));
+        }
+
+        // ============================================================
+        //  SOS
+        // ============================================================
+        function sendSOS(ctx) {
+            if (!touristLat || !touristLon) { alert('Unable to get your location. Enable GPS.'); return; }
+
+            const btn = ctx === 'home' ? document.getElementById('sosButtonHome') : document.getElementById('sosButtonDetail');
+            const status = ctx === 'home' ? document.getElementById('sosStatusHome') : document.getElementById('sosStatusDetail');
+
+            btn.disabled = true;
+            status.textContent = 'Sending SOS…';
+            status.className = 'status-msg info';
+
+            fetch('/api/send-sos/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                body: JSON.stringify({ lat: touristLat, lon: touristLon })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        status.textContent = `✓ SOS sent to ${data.nearest_center} (${data.distance} km)`;
+                        status.className = 'status-msg success';
+                        if (map && ctx === 'home') {
+                            L.popup()
+                                .setLatLng([touristLat, touristLon])
+                                .setContent(`<b style="color:#e53935;">🆘 SOS ACTIVATED</b><br>Nearest: ${data.nearest_center}`)
+                                .openOn(map);
+                        }
+                    } else {
+                        status.textContent = '✗ Error sending SOS. Try again.';
+                        status.className = 'status-msg error';
+                    }
+                })
+                .catch(() => {
+                    status.textContent = '✗ Network error. Try again.';
+                    status.className = 'status-msg error';
+                })
+                .finally(() => {
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        status.className = 'status-msg';
+                        status.textContent = '';
+                    }, 6000);
+                });
+        }
+
+        // ============================================================
+        //  CHANGE PASSWORD
+        // ============================================================
+        function changePassword(e) {
+            e.preventDefault();
+            const btn = document.getElementById('changePwdBtn');
+            const status = document.getElementById('changePwdStatus');
+            const form = document.getElementById('changePasswordForm');
+
+            // Client-side: confirm passwords match before POSTing
+            const p1 = document.getElementById('newPassword1').value;
+            const p2 = document.getElementById('newPassword2').value;
+            if (p1 !== p2) {
+                status.textContent = '✗ New passwords do not match.';
+                status.className = 'status-msg error';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Updating…';
+            status.textContent = '';
+            status.className = 'status-msg';
+
+            const data = new FormData(form);
+
+            fetch('/accounts/change-password/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                body: data
+            })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.status === 'success') {
+                        status.textContent = '✓ ' + res.message;
+                        status.className = 'status-msg success';
+                        form.reset();
+                    } else {
+                        status.textContent = '✗ ' + (res.message || 'Validation failed.');
+                        status.className = 'status-msg error';
+                    }
+                })
+                .catch(() => {
+                    status.textContent = '✗ Network error. Please try again.';
+                    status.className = 'status-msg error';
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.textContent = '🔒 Update Password';
+                });
+        }
+
+        // ============================================================
+        //  DANGER ZONE MODAL
+        // ============================================================
+        function showDangerModal(zoneData) {
+            document.getElementById('modalZoneName').textContent = zoneData.zone_name;
+            document.getElementById('modalSeverity').textContent = zoneData.severity;
+            document.getElementById('modalSeverity').style.color = zoneData.severity === 'High' ? '#e53935' : '#ff9800';
+            document.getElementById('modalRiskType').textContent = zoneData.risk_type;
+            document.getElementById('modalDistance').textContent = Math.round(zoneData.distance) + ' meters';
+            document.getElementById('dangerModalOverlay').classList.add('active');
+        }
+
+        function closeDangerModal() {
+            document.getElementById('dangerModalOverlay').classList.remove('active');
+        }
+
+        // ============================================================
+        //  NOTIFICATIONS
+        // ============================================================
+        function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission().then(p => { notificationPermission = p; });
+            } else if ('Notification' in window) {
+                notificationPermission = Notification.permission;
+            }
+        }
+
+        function showBrowserNotification(zoneData) {
+            if (notificationPermission === 'granted') {
+                new Notification('⚠️ Danger Zone Alert', {
+                    body: `${zoneData.zone_name} — ${zoneData.severity} (${Math.round(zoneData.distance)}m away)`,
+                    tag: 'danger-zone',
+                    requireInteraction: true
+                });
+            }
+        }
+
+        function playAlertBeep() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.frequency.value = 800; osc.type = 'sine';
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+                osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.5);
+            } catch (_) { }
+        }
+
+        // ============================================================
+        //  UTILITIES
+        // ============================================================
+        function calcRisk(zones) {
+            const high = zones.filter(z => z.severity === 'High');
+            const med = zones.filter(z => z.severity === 'Medium');
+            const low = zones.filter(z => z.severity === 'Low');
+            if (high.length) return { text: 'High', cls: 'high', description: `${high.length} high-risk zone(s) nearby` };
+            if (med.length) return { text: 'Medium', cls: 'medium', description: `${med.length} medium-risk zone(s) nearby` };
+            if (low.length) return { text: 'Low', cls: 'low', description: `${low.length} low-risk zone(s) nearby` };
+            return { text: 'Safe', cls: 'safe', description: 'No danger zones detected — area is clear' };
+        }
+
+        function placeIcon(type) {
+            if (type === 'Police Station') return '🚓';
+            if (type === 'Hospital') return '🏥';
+            return 'ℹ️';
+        }
+
+        function getCookie(name) {
+            const cookies = document.cookie.split(';');
+            for (let c of cookies) {
+                c = c.trim();
+                if (c.startsWith(name + '=')) return decodeURIComponent(c.slice(name.length + 1));
+            }
+            return null;
+        }
+
+        function doLogout() {
+            window.location.href = '/accounts/logout/';
+        }
+
+        // ============================================================
+        //  MOBILE SIDEBAR
+        // ============================================================
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        document.addEventListener('click', e => {
+            if (window.innerWidth > 768) return;
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.getElementById('sidebarToggle');
+            if (!sidebar.contains(e.target) && !toggle.contains(e.target)) {
+                sidebar.classList.remove('open');
+            }
+        });
+
+        // ============================================================
+        //  BOOT — default view is 'home', initialise map immediately
+        // ============================================================
+        window.onload = function () {
+            showView('home');
+        };
+
+        // bfcache security: force reload if page is served from back-forward cache
+        window.addEventListener("pageshow", function (event) {
+            if (event.persisted) {
+                window.location.reload();
+            }
+        });
+    </script>
+
+</body>
+
+</html>

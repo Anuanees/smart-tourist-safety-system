@@ -1,0 +1,142 @@
+{% extends 'accounts/base_admin.html' %}
+
+{% block title %}SOS Records{% endblock %}
+
+{% block page_header %}SOS Records{% endblock %}
+
+{% block content %}
+<div class="page-title">
+    <h2>SOS Records</h2>
+    <p>View all emergency alerts sent by tourists.</p>
+</div>
+
+<div class="content-card">
+    <div class="content-card-header">
+        <h5><i class="fas fa-bell"></i> All SOS Alerts</h5>
+        <div>
+            <span class="badge bg-warning">{{ total_sos }} Total Records</span>
+        </div>
+    </div>
+    <div class="content-card-body">
+        <!-- Search Bar -->
+        <div class="search-filter-bar">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search by tourist name...">
+            </div>
+            <div class="filter-box">
+                <select id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="responded">Responded</option>
+                    <option value="closed">Closed</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Table -->
+        {% if sos_alerts %}
+        <div class="table-wrapper">
+            <table class="custom-table" id="sosTable">
+                <thead>
+                    <tr>
+                        <th>Tourist</th>
+                        <th>Location</th>
+                        <th>Nearest Help</th>
+                        <th>Distance (km)</th>
+                        <th>Status</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sos in sos_alerts %}
+                    <tr>
+                        <td><strong>{{ sos.tourist.username }}</strong></td>
+                        <td>
+                            <small>{{ sos.latitude|floatformat:4 }}, {{ sos.longitude|floatformat:4 }}</small>
+                        </td>
+                        <td>{{ sos.nearest_help_center|default:"-" }}</td>
+                        <td>{{ sos.distance_km|default:"-"|floatformat:2 }}</td>
+                        <td>
+                            {% if sos.status == 'pending' %}
+                            <span class="badge bg-warning">Pending</span>
+                            {% elif sos.status == 'responded' %}
+                            <span class="badge bg-primary">Responded</span>
+                            {% else %}
+                            <span class="badge bg-success">Closed</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small>{{ sos.created_at|date:"M d, Y H:i" }}</small>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+            <a href="?page=1">First</a>
+            <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
+            {% endif %}
+
+            <span class="active">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">Next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-bell-slash"></i>
+            <h5>No SOS records found</h5>
+            <p>Emergency alerts will appear here when tourists send SOS</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('keyup', function () {
+        const searchValue = this.value.toLowerCase();
+        const table = document.getElementById('sosTable');
+        if (!table) return;
+
+        const rows = table.getElementsByTagName('tr');
+
+        for (let i = 1; i < rows.length; i++) {
+            const touristName = rows[i].getElementsByTagName('td')[0].textContent.toLowerCase();
+            if (touristName.includes(searchValue)) {
+                rows[i].style.display = '';
+            } else {
+                rows[i].style.display = 'none';
+            }
+        }
+    });
+
+    // Status filter
+    document.getElementById('statusFilter').addEventListener('change', function () {
+        const filterValue = this.value.toLowerCase();
+        const table = document.getElementById('sosTable');
+        if (!table) return;
+
+        const rows = table.getElementsByTagName('tr');
+
+        for (let i = 1; i < rows.length; i++) {
+            const status = rows[i].getElementsByTagName('td')[4].textContent.toLowerCase();
+            if (filterValue === '' || status.includes(filterValue)) {
+                rows[i].style.display = '';
+            } else {
+                rows[i].style.display = 'none';
+            }
+        }
+    });
+</script>
+{% endblock %}

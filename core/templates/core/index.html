@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Smart Tourist Safety System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: #f4f6f9;
+            color: #333;
+        }
+
+        /* Navbar */
+        header {
+            background: linear-gradient(90deg, #1d2671, #c33764);
+            padding: 15px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+
+        header h1 {
+            font-size: 22px;
+        }
+
+        nav a {
+            color: white;
+            margin-left: 25px;
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        /* Hero Section */
+        .hero {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 80px 50px;
+        }
+
+        .hero-text {
+            max-width: 550px;
+        }
+
+        .hero-text h2 {
+            font-size: 40px;
+            margin-bottom: 20px;
+            color: #1d2671;
+        }
+
+        .hero-text p {
+            font-size: 16px;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .hero-text button {
+            padding: 12px 25px;
+            border: none;
+            background: #c33764;
+            color: white;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .hero-text button:hover {
+            background: #a52a53;
+        }
+
+        .hero-image {
+            width: 400px;
+        }
+
+        .hero-image img {
+            width: 100%;
+        }
+
+        /* Features */
+        .features {
+            background: white;
+            padding: 60px 50px;
+        }
+
+        .features h3 {
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 40px;
+            color: #1d2671;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+        }
+
+        .feature-card {
+            background: #f4f6f9;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            transition: 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-card h4 {
+            margin-bottom: 10px;
+            color: #c33764;
+        }
+
+        /* Footer */
+        footer {
+            background: #1d2671;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            margin-top: 40px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-box {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            width: 300px;
+        }
+
+        .modal-box h3 {
+            margin-bottom: 20px;
+            color: #1d2671;
+        }
+
+        .modal-box button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+            background: #c33764;
+            color: white;
+            font-size: 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .modal-box button:hover {
+            background: #a52a53;
+        }
+
+        .close {
+            margin-top: 10px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        @media (max-width: 900px) {
+            .hero {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .hero-image {
+                margin-top: 40px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Tourist Safety System</h1>
+        <nav>
+            <a href="{% url 'index' %}">Home</a>
+            <a href="#features">Features</a>
+            <a href="#about">About</a>
+            <a href="{% url 'login' %}">Login</a>
+            <a href="{% url 'tourist_signup' %}">Sign Up</a>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <div class="hero-text">
+            <h2>Smart Tourist Safety & Risk Alert System</h2>
+            <p>
+                A smart platform designed to protect tourists by providing real-time
+                alerts, high-risk area warnings, and emergency support using data-driven insights.
+            </p>
+            <button onclick="window.location.href='{% url 'tourist_signup' %}'">
+                Get Started
+            </button>
+        </div>
+
+        <div class="hero-image">
+            <img src="https://cdn-icons-png.flaticon.com/512/201/201623.png" alt="Travel Safety">
+        </div>
+    </section>
+
+    <section class="features" id="features">
+        <h3>Key Features</h3>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h4>📍 Risk Zone Detection</h4>
+                <p>Identifies crime-prone and unsafe locations for tourists.</p>
+            </div>
+
+            <div class="feature-card">
+                <h4>🚨 Emergency Alerts</h4>
+                <p>Instant alerts during emergencies or unsafe situations.</p>
+            </div>
+
+            <div class="feature-card">
+                <h4>🗺️ Live Map View</h4>
+                <p>Interactive map showing safe and risky zones.</p>
+            </div>
+
+            <div class="feature-card">
+                <h4>🛠️ Admin Dashboard</h4>
+                <p>Authorities can manage alerts and monitor activity.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        © 2026 Smart Tourist Safety System | Mini Project
+    </footer>
+
+    <script>
+        // Modal removed – single login page used instead
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,97 @@
+{% extends 'accounts/base_admin.html' %}
+
+{% block title %}Add Danger Zone{% endblock %}
+
+{% block page_header %}Add Danger Zone{% endblock %}
+
+{% block content %}
+<div class="page-title">
+    <h2>Add Danger Zone</h2>
+    <p>Mark a new high-risk area to alert tourists and ensure safety.</p>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="content-card">
+            <div class="content-card-header">
+                <h5><i class="fas fa-exclamation-triangle"></i> Danger Zone Information</h5>
+            </div>
+            <div class="content-card-body">
+                <form method="post" action="{% url 'add_zone' %}">
+                    {% csrf_token %}
+
+                    <div class="form-group">
+                        <label class="form-label">Zone Name <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" placeholder="Enter zone name" required>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Risk Type <span class="text-danger">*</span></label>
+                                <select name="risk_type" class="form-control" required>
+                                    <option value="">Select risk type</option>
+                                    <option value="Crime">Crime</option>
+                                    <option value="Flood">Flood</option>
+                                    <option value="Landslide">Landslide</option>
+                                    <option value="Wildlife">Wildlife</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Severity Level <span class="text-danger">*</span></label>
+                                <select name="severity" class="form-control" required>
+                                    <option value="">Select severity</option>
+                                    <option value="Low">Low</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="High">High</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Latitude</label>
+                                <input type="number" step="any" name="latitude" class="form-control"
+                                    placeholder="e.g., 10.8505">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Longitude</label>
+                                <input type="number" step="any" name="longitude" class="form-control"
+                                    placeholder="e.g., 76.2711">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Radius (meters)</label>
+                        <input type="number" name="radius" class="form-control" placeholder="Default: 500" value="500">
+                        <small class="text-muted">Geofence radius for danger zone alerts</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Additional Details</label>
+                        <textarea name="additional_details" class="form-control" rows="4"
+                            placeholder="Enter any additional information about this danger zone"></textarea>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-save"></i> Add Danger Zone
+                        </button>
+                        <a href="{% url 'manage_zones' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

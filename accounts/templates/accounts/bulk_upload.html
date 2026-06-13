@@ -1,0 +1,211 @@
+{% extends 'accounts/base_admin.html' %}
+
+{% block title %}Bulk Upload{% endblock %}
+
+{% block page_header %}Bulk Upload (CSV){% endblock %}
+
+{% block content %}
+<div class="page-title">
+    <h2>CSV Bulk Upload</h2>
+    <p>Upload CSV files to add multiple danger zones or places at once.</p>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="content-card">
+            <div class="content-card-header">
+                <h5><i class="fas fa-file-upload"></i> Upload CSV File</h5>
+            </div>
+            <div class="content-card-body">
+                <form method="post" enctype="multipart/form-data" id="uploadForm">
+                    {% csrf_token %}
+
+                    <div class="form-group">
+                        <label class="form-label">Upload Type <span class="text-danger">*</span></label>
+                        <select name="upload_type" class="form-control" required id="uploadType">
+                            <option value="">Select what to upload</option>
+                            <option value="danger_zones">Danger Zones</option>
+                            <option value="places">Places</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">CSV File <span class="text-danger">*</span></label>
+                        <input type="file" name="csv_file" class="form-control" accept=".csv" required id="csvFile">
+                        <small class="text-muted">Only CSV files are allowed</small>
+                    </div>
+
+                    <div class="alert alert-info" style="margin-top: 20px;">
+                        <h6><i class="fas fa-info-circle"></i> CSV Format Guide</h6>
+                        <div id="formatGuide">
+                            <p class="mb-1"><strong>Select upload type to see format requirements</strong></p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn-primary" id="submitBtn">
+                            <i class="fas fa-upload"></i> Upload CSV
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="downloadSample()" id="downloadBtn"
+                            style="display: none;">
+                            <i class="fas fa-download"></i> Download Sample CSV
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Loading Indicator -->
+                <div id="loadingIndicator" style="display: none; margin-top: 20px; text-align: center;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p style="margin-top: 10px; color: #64748b;">Processing CSV file...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- CSV Format Reference -->
+        <div class="content-card" style="margin-top: 25px;">
+            <div class="content-card-header">
+                <h5><i class="fas fa-book"></i> CSV Format Reference</h5>
+            </div>
+            <div class="content-card-body">
+                <h6>Danger Zones CSV Format:</h6>
+                <pre style="background: #f8fafc; padding: 15px; border-radius: 8px; overflow-x: auto;">name,latitude,longitude,severity,radius,description
+Downtown Crime Zone,10.8505,76.2711,High,500,High crime area
+Flood Prone Area,10.8600,76.2800,Medium,1000,Seasonal flooding</pre>
+
+                <div style="margin: 15px 0;">
+                    <strong>Validation Rules:</strong>
+                    <ul style="margin-top: 10px; color: #64748b; font-size: 14px;">
+                        <li><code>severity</code> must be: Low, Medium, or High</li>
+                        <li><code>latitude</code> and <code>longitude</code> must be valid decimal numbers</li>
+                        <li><code>radius</code> must be a positive integer (in meters)</li>
+                        <li>Empty rows will be skipped</li>
+                        <li>Duplicates (same name + coordinates) will be skipped</li>
+                    </ul>
+                </div>
+
+                <hr style="margin: 20px 0;">
+
+                <h6>Places CSV Format:</h6>
+                <pre style="background: #f8fafc; padding: 15px; border-radius: 8px; overflow-x: auto;">name,type,latitude,longitude,description
+Central Hospital,Hospital,10.8505,76.2711,24/7 emergency services
+City Police Station,Police Station,10.8600,76.2800,Main police headquarters</pre>
+
+                <div style="margin: 15px 0;">
+                    <strong>Validation Rules:</strong>
+                    <ul style="margin-top: 10px; color: #64748b; font-size: 14px;">
+                        <li><code>type</code> must be: Police Station, Hospital, or Help Center</li>
+                        <li><code>latitude</code> and <code>longitude</code> must be valid decimal numbers</li>
+                        <li><code>name</code> cannot be empty</li>
+                        <li>Empty rows will be skipped</li>
+                        <li>Duplicates (same name + coordinates) will be skipped</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const uploadType = document.getElementById('uploadType');
+    const formatGuide = document.getElementById('formatGuide');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const uploadForm = document.getElementById('uploadForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+
+    // Show format guide based on selection
+    uploadType.addEventListener('change', function () {
+        const type = this.value;
+
+        if (type === 'danger_zones') {
+            formatGuide.innerHTML = `
+            <p class="mb-1"><strong>Required Headers:</strong></p>
+            <code>name, latitude, longitude, severity, radius, description</code>
+            <p class="mt-2 mb-1"><strong>Example:</strong></p>
+            <code>Downtown Crime Zone,10.8505,76.2711,High,500,High crime area</code>
+        `;
+            downloadBtn.style.display = 'inline-block';
+        } else if (type === 'places') {
+            formatGuide.innerHTML = `
+            <p class="mb-1"><strong>Required Headers:</strong></p>
+            <code>name, type, latitude, longitude, description</code>
+            <p class="mt-2 mb-1"><strong>Example:</strong></p>
+            <code>Central Hospital,Hospital,10.8505,76.2711,24/7 emergency</code>
+        `;
+            downloadBtn.style.display = 'inline-block';
+        } else {
+            formatGuide.innerHTML = `
+            <p class="mb-1"><strong>Select upload type to see format requirements</strong></p>
+        `;
+            downloadBtn.style.display = 'none';
+        }
+    });
+
+    // Show loading indicator on submit
+    uploadForm.addEventListener('submit', function () {
+        submitBtn.disabled = true;
+        loadingIndicator.style.display = 'block';
+    });
+
+    // Download sample CSV
+    function downloadSample() {
+        const type = uploadType.value;
+        let csvContent = '';
+        let filename = '';
+
+        if (type === 'danger_zones') {
+            csvContent = 'name,latitude,longitude,severity,radius,description\n';
+            csvContent += 'Downtown Crime Zone,10.8505,76.2711,High,500,High crime area\n';
+            csvContent += 'Flood Prone Area,10.8600,76.2800,Medium,1000,Seasonal flooding\n';
+            csvContent += 'Landslide Risk Zone,10.8700,76.2900,Low,750,Monitor during monsoon';
+            filename = 'sample_danger_zones.csv';
+        } else if (type === 'places') {
+            csvContent = 'name,type,latitude,longitude,description\n';
+            csvContent += 'Central Hospital,Hospital,10.8505,76.2711,24/7 emergency services\n';
+            csvContent += 'City Police Station,Police Station,10.8600,76.2800,Main police headquarters\n';
+            csvContent += 'Tourist Help Center,Help Center,10.8700,76.2900,Tourism information desk';
+            filename = 'sample_places.csv';
+        }
+
+        // Create download link
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }
+</script>
+
+<style>
+    .spinner-border {
+        width: 3rem;
+        height: 3rem;
+    }
+
+    code {
+        background: #f1f5f9;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 13px;
+        color: #4f46e5;
+    }
+
+    pre {
+        font-size: 13px;
+        margin: 10px 0;
+    }
+
+    .alert-info h6 {
+        margin-bottom: 10px;
+        color: #0369a1;
+    }
+</style>
+{% endblock %}

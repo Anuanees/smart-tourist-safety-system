@@ -1,0 +1,74 @@
+{% extends 'accounts/base_admin.html' %}
+
+{% block title %}Add New Place{% endblock %}
+
+{% block page_header %}Add New Place{% endblock %}
+
+{% block content %}
+<div class="page-title">
+    <h2>Add New Place</h2>
+    <p>Register a new location like hospital, police station, or help center.</p>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="content-card">
+            <div class="content-card-header">
+                <h5><i class="fas fa-plus-circle"></i> Place Information</h5>
+            </div>
+            <div class="content-card-body">
+                <form method="post" action="{% url 'add_place' %}">
+                    {% csrf_token %}
+
+                    <div class="form-group">
+                        <label class="form-label">Place Name <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" placeholder="Enter place name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Place Type <span class="text-danger">*</span></label>
+                        <select name="type" class="form-control" required>
+                            <option value="">Select type</option>
+                            <option value="Hospital">Hospital</option>
+                            <option value="Police Station">Police Station</option>
+                            <option value="Help Center">Help Center</option>
+                        </select>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Latitude</label>
+                                <input type="number" step="any" name="latitude" class="form-control"
+                                    placeholder="e.g., 10.8505">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Longitude</label>
+                                <input type="number" step="any" name="longitude" class="form-control"
+                                    placeholder="e.g., 76.2711">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="4"
+                            placeholder="Enter additional details about this place"></textarea>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-save"></i> Add Place
+                        </button>
+                        <a href="{% url 'manage_places' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

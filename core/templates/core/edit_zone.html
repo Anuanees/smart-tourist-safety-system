@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Edit Danger Zone</title>
+  <style>
+    input, select, textarea, button {
+      display: block;
+      margin: 10px 0;
+      padding: 8px;
+      width: 300px;
+    }
+    button {
+      width: 100px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Edit Danger Zone</h2>
+
+<form method="POST">
+    {% csrf_token %}
+
+
+    <input type="text" name="name" value="{{ zone.name }}" placeholder="Zone Name" required>
+
+    <select name="risk_type">
+      <option {% if zone.risk_type == "Crime" %}selected{% endif %}>Crime</option>
+      <option {% if zone.risk_type == "Flood" %}selected{% endif %}>Flood</option>
+      <option {% if zone.risk_type == "Landslide" %}selected{% endif %}>Landslide</option>
+    </select>
+
+    <select name="severity">
+      <option {% if zone.severity == "Low" %}selected{% endif %}>Low</option>
+      <option {% if zone.severity == "Medium" %}selected{% endif %}>Medium</option>
+      <option {% if zone.severity == "High" %}selected{% endif %}>High</option>
+    </select>
+
+    <input type="text" name="latitude" value="{{ zone.latitude }}" placeholder="Latitude">
+    <input type="text" name="longitude" value="{{ zone.longitude }}" placeholder="Longitude">
+
+    <textarea name="additional_details" placeholder="Additional Details">{{ zone.additional_details }}</textarea>
+
+    <button type="submit">Save Changes</button>
+  </form>
+
+  <a href="{% url 'admin_dashboard' %}">Back to Dashboard</a>
+</body>
+</html>

@@ -1,0 +1,156 @@
+{% extends 'accounts/base_admin.html' %}
+
+{% block title %}Manage Places{% endblock %}
+
+{% block page_header %}Manage Places{% endblock %}
+
+{% block content %}
+<div class="page-title">
+    <h2>Manage Places</h2>
+    <p>View and manage all registered locations including hospitals, police stations, and help centers.</p>
+</div>
+
+<div class="content-card">
+    <div class="content-card-header">
+        <h5><i class="fas fa-map-marker-alt"></i> All Places</h5>
+        <a href="{% url 'add_place' %}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus"></i> Add New Place
+        </a>
+    </div>
+    <div class="content-card-body">
+        <!-- Search and Filter -->
+        <div class="search-filter-bar">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search by place name...">
+            </div>
+            <div class="filter-box">
+                <select id="typeFilter">
+                    <option value="">All Types</option>
+                    <option value="Hospital">Hospital</option>
+                    <option value="Police Station">Police Station</option>
+                    <option value="Help Center">Help Center</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Table -->
+        {% if places %}
+        <div class="table-wrapper">
+            <table class="custom-table" id="placesTable">
+                <thead>
+                    <tr>
+                        <th>Place Name</th>
+                        <th>Type</th>
+                        <th>Latitude</th>
+                        <th>Longitude</th>
+                        <th>Description</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for place in places %}
+                    <tr>
+                        <td><strong>{{ place.name }}</strong></td>
+                        <td>
+                            {% if place.type == 'Hospital' %}
+                            <span class="badge bg-success">{{ place.type }}</span>
+                            {% elif place.type == 'Police Station' %}
+                            <span class="badge bg-primary">{{ place.type }}</span>
+                            {% else %}
+                            <span class="badge bg-info">{{ place.type }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ place.latitude|default:"-" }}</td>
+                        <td>{{ place.longitude|default:"-" }}</td>
+                        <td>{{ place.description|truncatewords:10|default:"-" }}</td>
+                        <td>
+                            <a href="javascript:void(0)"
+                                onclick="confirmDelete('{% url 'delete_place' place.id %}', '{{ place.name }}')"
+                                class="btn-action btn-delete">
+                                <i class="fas fa-trash"></i> Delete
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-map-marker-alt"></i>
+            <h5>No places found</h5>
+            <p>Click "Add New Place" to register your first location</p>
+            <a href="{% url 'add_place' %}" class="btn btn-primary mt-3">
+                <i class="fas fa-plus"></i> Add Place
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="deleteName"></strong>?</p>
+                <p class="text-danger"><i class="fas fa-exclamation-triangle"></i> This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="post" style="margin: 0;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('keyup', function () {
+        const searchValue = this.value.toLowerCase();
+        const table = document.getElementById('placesTable');
+        const rows = table.getElementsByTagName('tr');
+
+        for (let i = 1; i < rows.length; i++) {
+            const placeName = rows[i].getElementsByTagName('td')[0].textContent.toLowerCase();
+            if (placeName.includes(searchValue)) {
+                rows[i].style.display = '';
+            } else {
+                rows[i].style.display = 'none';
+            }
+        }
+    });
+
+    // Filter functionality
+    document.getElementById('typeFilter').addEventListener('change', function () {
+        const filterValue = this.value;
+        const table = document.getElementById('placesTable');
+        const rows = table.getElementsByTagName('tr');
+
+        for (let i = 1; i < rows.length; i++) {
+            const placeType = rows[i].getElementsByTagName('td')[1].textContent;
+            if (filterValue === '' || placeType.includes(filterValue)) {
+                rows[i].style.display = '';
+            } else {
+                rows[i].style.display = 'none';
+            }
+        }
+    });
+
+    // Delete confirmation
+    function confirmDelete(url, name) {
+        document.getElementById('deleteName').textContent = name;
+        document.getElementById('deleteForm').action = url;
+        new bootstrap.Modal(document.getElementById('deleteModal')).show();
+    }
+</script>
+{% endblock %}

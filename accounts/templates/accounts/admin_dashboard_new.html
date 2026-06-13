@@ -1,0 +1,186 @@
+{% extends 'accounts/base_admin.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block page_header %}Dashboard Overview{% endblock %}
+
+{% block content %}
+<div class="page-title">
+    <h2>Welcome back, {{ user.username }}!</h2>
+    <p>Here's what's happening with your tourist safety system today.</p>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: #dbeafe; color: #2563eb;">
+                <i class="fas fa-map-marked-alt"></i>
+            </div>
+            <h6>Total Places</h6>
+            <div class="stat-value" style="color: #2563eb;">{{ total_places }}</div>
+            <div class="stat-change text-success">
+                <i class="fas fa-arrow-up"></i> Active locations
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: #fee2e2; color: #dc2626;">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h6>Danger Zones</h6>
+            <div class="stat-value" style="color: #dc2626;">{{ total_zones }}</div>
+            <div class="stat-change text-danger">
+                <i class="fas fa-shield-alt"></i> {{ high_severity_zones }} high severity
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: #fef3c7; color: #d97706;">
+                <i class="fas fa-bell"></i>
+            </div>
+            <h6>Total SOS Records</h6>
+            <div class="stat-value" style="color: #d97706;">{{ total_sos }}</div>
+            <div class="stat-change text-warning">
+                <i class="fas fa-clock"></i> All time records
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: #d1fae5; color: #059669;">
+                <i class="fas fa-users"></i>
+            </div>
+            <h6>Active Tourists</h6>
+            <div class="stat-value" style="color: #059669;">{{ active_tourists }}</div>
+            <div class="stat-change text-success">
+                <i class="fas fa-check-circle"></i> Registered users
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="page-title">
+    <h2>Quick Actions</h2>
+    <p>Manage your system with these quick shortcuts.</p>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <a href="{% url 'add_place' %}" class="quick-action-btn text-decoration-none">
+            <i class="fas fa-plus-circle" style="color: #2563eb;"></i>
+            <h5 style="color: #1e293b;">Add New Place</h5>
+            <p style="color: #64748b; font-size: 14px; margin: 5px 0 0 0;">Register hospital, police station, or help
+                center</p>
+        </a>
+    </div>
+
+    <div class="col-md-4">
+        <a href="{% url 'add_zone' %}" class="quick-action-btn text-decoration-none">
+            <i class="fas fa-map-pin" style="color: #dc2626;"></i>
+            <h5 style="color: #1e293b;">Add Danger Zone</h5>
+            <p style="color: #64748b; font-size: 14px; margin: 5px 0 0 0;">Mark high-risk areas for tourist safety</p>
+        </a>
+    </div>
+
+    <div class="col-md-4">
+        <a href="{% url 'manage_sos' %}" class="quick-action-btn text-decoration-none">
+            <i class="fas fa-list-alt" style="color: #d97706;"></i>
+            <h5 style="color: #1e293b;">View SOS Records</h5>
+            <p style="color: #64748b; font-size: 14px; margin: 5px 0 0 0;">Review emergency alerts and responses</p>
+        </a>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="content-card">
+            <div class="content-card-header">
+                <h5><i class="fas fa-map-marker-alt"></i> Recent Places</h5>
+                <a href="{% url 'manage_places' %}" style="color: #4f46e5; font-size: 14px; text-decoration: none;">View
+                    all</a>
+            </div>
+            <div class="content-card-body">
+                {% if recent_places %}
+                <div class="table-wrapper">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th>Place Name</th>
+                                <th>Type</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for place in recent_places %}
+                            <tr>
+                                <td>{{ place.name }}</td>
+                                <td><span class="badge bg-primary">{{ place.type }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <h5>No places yet</h5>
+                    <p>Start by adding your first location</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="content-card">
+            <div class="content-card-header">
+                <h5><i class="fas fa-exclamation-triangle"></i> Recent Danger Zones</h5>
+                <a href="{% url 'manage_zones' %}" style="color: #4f46e5; font-size: 14px; text-decoration: none;">View
+                    all</a>
+            </div>
+            <div class="content-card-body">
+                {% if recent_zones %}
+                <div class="table-wrapper">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th>Zone Name</th>
+                                <th>Severity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for zone in recent_zones %}
+                            <tr>
+                                <td>{{ zone.name }}</td>
+                                <td>
+                                    <span class="badge-severity 
+                                            {% if zone.severity == 'High' %}badge-high
+                                            {% elif zone.severity == 'Medium' %}badge-medium
+                                            {% else %}badge-low{% endif %}">
+                                        {{ zone.severity }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h5>No danger zones yet</h5>
+                    <p>Add zones to monitor high-risk areas</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,188 @@
+{% extends 'accounts/base_admin.html' %}
+
+{% block title %}Manage Danger Zones{% endblock %}
+
+{% block page_header %}Manage Danger Zones{% endblock %}
+
+{% block content %}
+<div class="page-title">
+    <h2>Manage Danger Zones</h2>
+    <p>Monitor and manage high-risk areas to ensure tourist safety.</p>
+</div>
+
+<div class="content-card">
+    <div class="content-card-header">
+        <h5><i class="fas fa-exclamation-triangle"></i> All Danger Zones</h5>
+        <a href="{% url 'add_zone' %}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus"></i> Add New Zone
+        </a>
+    </div>
+    <div class="content-card-body">
+        <!-- Search and Filter -->
+        <div class="search-filter-bar">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search by zone name...">
+            </div>
+            <div class="filter-box">
+                <select id="severityFilter">
+                    <option value="">All Severities</option>
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                </select>
+            </div>
+            <div class="filter-box">
+                <select id="riskFilter">
+                    <option value="">All Risk Types</option>
+                    <option value="Crime">Crime</option>
+                    <option value="Flood">Flood</option>
+                    <option value="Landslide">Landslide</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Table -->
+        {% if zones %}
+        <div class="table-wrapper">
+            <table class="custom-table" id="zonesTable">
+                <thead>
+                    <tr>
+                        <th>Zone Name</th>
+                        <th>Risk Type</th>
+                        <th>Severity</th>
+                        <th>Latitude</th>
+                        <th>Longitude</th>
+                        <th>Radius (m)</th>
+                        <th>Details</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for zone in zones %}
+                    <tr>
+                        <td><strong>{{ zone.name }}</strong></td>
+                        <td>
+                            <span class="badge bg-secondary">{{ zone.risk_type }}</span>
+                        </td>
+                        <td>
+                            <span class="badge-severity 
+                                    {% if zone.severity == 'High' %}badge-high
+                                    {% elif zone.severity == 'Medium' %}badge-medium
+                                    {% else %}badge-low{% endif %}">
+                                {{ zone.severity }}
+                            </span>
+                        </td>
+                        <td>{{ zone.latitude|default:"-" }}</td>
+                        <td>{{ zone.longitude|default:"-" }}</td>
+                        <td>{{ zone.radius|default:"500" }}</td>
+                        <td>{{ zone.additional_details|truncatewords:8|default:"-" }}</td>
+                        <td>
+                            <a href="javascript:void(0)"
+                                onclick="confirmDelete('{% url 'delete_zone' zone.id %}', '{{ zone.name }}')"
+                                class="btn-action btn-delete">
+                                <i class="fas fa-trash"></i> Delete
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h5>No danger zones found</h5>
+            <p>Click "Add New Zone" to mark your first high-risk area</p>
+            <a href="{% url 'add_zone' %}" class="btn btn-primary mt-3">
+                <i class="fas fa-plus"></i> Add Danger Zone
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="deleteName"></strong>?</p>
+                <p class="text-danger"><i class="fas fa-exclamation-triangle"></i> This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="post" style="margin: 0;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('keyup', function () {
+        const searchValue = this.value.toLowerCase();
+        const table = document.getElementById('zonesTable');
+        const rows = table.getElementsByTagName('tr');
+
+        for (let i = 1; i < rows.length; i++) {
+            const zoneName = rows[i].getElementsByTagName('td')[0].textContent.toLowerCase();
+            if (zoneName.includes(searchValue)) {
+                rows[i].style.display = '';
+            } else {
+                rows[i].style.display = 'none';
+            }
+        }
+    });
+
+    // Severity filter
+    document.getElementById('severityFilter').addEventListener('change', function () {
+        filterTable();
+    });
+
+    // Risk filter
+    document.getElementById('riskFilter').addEventListener('change', function () {
+        filterTable();
+    });
+
+    function filterTable() {
+        const severityValue = document.getElementById('severityFilter').value;
+        const riskValue = document.getElementById('riskFilter').value;
+        const table = document.getElementById('zonesTable');
+        const rows = table.getElementsByTagName('tr');
+
+        for (let i = 1; i < rows.length; i++) {
+            const riskType = rows[i].getElementsByTagName('td')[1].textContent;
+            const severity = rows[i].getElementsByTagName('td')[2].textContent;
+
+            let showRow = true;
+
+            if (severityValue && !severity.includes(severityValue)) {
+                showRow = false;
+            }
+
+            if (riskValue && !riskType.includes(riskValue)) {
+                showRow = false;
+            }
+
+            rows[i].style.display = showRow ? '' : 'none';
+        }
+    }
+
+    // Delete confirmation
+    function confirmDelete(url, name) {
+        document.getElementById('deleteName').textContent = name;
+        document.getElementById('deleteForm').action = url;
+        new bootstrap.Modal(document.getElementById('deleteModal')).show();
+    }
+</script>
+{% endblock %}

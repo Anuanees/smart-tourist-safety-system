@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Control Panel | Live Monitoring</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --surface2: #1c2230;
+            --border: #30363d;
+            --accent: #238636;
+            --danger: #e53935;
+            --warning: #f0883e;
+            --info: #1f6feb;
+            --sos-red: #ff1744;
+            --text: #e6edf3;
+            --text-muted: #8b949e;
+            --panel-w: 380px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        /* ─── TOPBAR ─── */
+        .topbar {
+            height: 56px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            gap: 16px;
+            position: relative;
+            z-index: 100;
+        }
+
+        .topbar-brand {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .topbar-spacer {
+            flex: 1;
+        }
+
+        .topbar-meta {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 16px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--surface2);
+            color: var(--text);
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background: var(--border);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            border-color: var(--danger);
+            color: #fff;
+        }
+
+        .btn-danger:hover {
+            background: #c62828;
+            border-color: #c62828;
+        }
+
+        .btn-info {
+            background: var(--info);
+            border-color: var(--info);
+            color: #fff;
+        }
+
+        .btn-info:hover {
+            background: #1558b0;
+        }
+
+        .btn-sm {
+            padding: 5px 12px;
+            font-size: 12px;
+        }
+
+        /* ─── STATS ─── */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1px;
+            background: var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .stat-item {
+            background: var(--surface);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .stat-icon {
+            font-size: 24px;
+        }
+
+        .stat-value {
+            font-size: 22px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .stat-item.s-tourists .stat-value {
+            color: #3fb950;
+        }
+
+        .stat-item.s-danger .stat-value {
+            color: var(--danger);
+        }
+
+        .stat-item.s-sos .stat-value {
+            color: var(--warning);
+        }
+
+        .stat-item.s-zones .stat-value {
+            color: var(--info);
+        }
+
+        /* ─── MAIN ─── */
+        .main {
+            display: flex;
+            height: calc(100vh - 56px - 50px);
+        }
+
+        /* ─── MAP ─── */
+        .map-wrap {
+            flex: 1;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .map-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: rgba(13, 17, 23, 0.9);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            z-index: 1000;
+            display: none;
+        }
+
+        /* ─── TOURIST DETAIL PANEL (slide-over) ─── */
+        .detail-panel {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 340px;
+            height: 100%;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            z-index: 900;
+            transform: translateX(-100%);
+            transition: transform 0.28s ease;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-panel.open {
+            transform: translateX(0);
+        }
+
+        .detail-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .detail-header h3 {
+            font-size: 15px;
+            font-weight: 700;
+            flex: 1;
+        }
+
+        .detail-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .detail-close:hover {
+            background: var(--surface2);
+            color: var(--text);
+        }
+
+        .detail-avatar {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--info), #58a6ff);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .detail-body {
+            padding: 16px;
+            flex: 1;
+        }
+
+        .detail-section {
+            margin-bottom: 18px;
+        }
+
+        .detail-section-title {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .detail-field {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .detail-field label {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .detail-field span {
+            color: var(--text);
+            font-weight: 500;
+            text-align: right;
+            max-width: 60%;
+            word-break: break-all;
+        }
+
+        .status-pill {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .pill-active {
+            background: #1b4332;
+            color: #3fb950;
+        }
+
+        .pill-offline {
+            background: #2d1f1f;
+            color: #f85149;
+        }
+
+        .pill-sos {
+            background: #3d2000;
+            color: var(--warning);
+        }
+
+        .pill-danger {
+            background: #2d1515;
+            color: var(--danger);
+        }
+
+        .pill-safe {
+            background: #122d22;
+            color: #3fb950;
+        }
+
+        .activity-item {
+            background: var(--surface2);
+            border-radius: 6px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            border-left: 3px solid var(--warning);
+            font-size: 12px;
+        }
+
+        .activity-item .act-type {
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .activity-item .act-meta {
+            color: var(--text-muted);
+        }
+
+        .detail-footer {
+            padding: 14px 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn-delete-tourist {
+            width: 100%;
+            background: rgba(229, 57, 53, 0.12);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-delete-tourist:hover {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        /* ─── SOS PANEL ─── */
+        .sos-panel {
+            width: var(--panel-w);
+            background: var(--surface);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sos-header {
+            padding: 14px 16px;
+            border-bottom: 2px solid var(--sos-red);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 23, 68, 0.06);
+        }
+
+        .sos-header h3 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text);
+            flex: 1;
+        }
+
+        .sos-badge {
+            background: var(--sos-red);
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .sos-filters {
+            display: flex;
+            gap: 6px;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .filter-btn {
+            flex: 1;
+            padding: 5px;
+            border-radius: 5px;
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .filter-btn.active {
+            background: var(--sos-red);
+            border-color: var(--sos-red);
+            color: #fff;
+        }
+
+        .sos-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .sos-item {
+            background: var(--surface2);
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--warning);
+            animation: fadeUp 0.3s ease;
+        }
+
+        .sos-item.pending {
+            border-left-color: var(--sos-red);
+        }
+
+        .sos-item.responded {
+            border-left-color: var(--info);
+        }
+
+        .sos-item.closed {
+            border-left-color: var(--accent);
+        }
+
+        .sos-item.new-sos {
+            animation: flashNew 1.2s ease-in-out 3;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes flashNew {
+
+            0%,
+            100% {
+                background: var(--surface2);
+            }
+
+            50% {
+                background: #3d1515;
+            }
+        }
+
+        .sos-name {
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+
+        .sos-meta {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin: 3px 0;
+        }
+
+        .sos-meta strong {
+            color: var(--text);
+        }
+
+        .sos-time {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        .sos-status-badge {
+            display: inline-block;
+            margin-top: 6px;
+        }
+
+        .sos-status-select {
+            width: 100%;
+            margin-top: 8px;
+            padding: 5px 8px;
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            font-size: 12px;
+        }
+
+        .sos-view-map {
+            background: none;
+            border: none;
+            color: var(--info);
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 6px;
+            padding: 0;
+            text-decoration: underline;
+        }
+
+        .sos-empty {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .sos-empty-icon {
+            font-size: 44px;
+            margin-bottom: 12px;
+            color: #3fb950;
+        }
+
+        /* ─── DELETE CONFIRM DIALOG ─── */
+        .confirm-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .confirm-overlay.open {
+            display: flex;
+        }
+
+        .confirm-dialog {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 28px;
+            max-width: 400px;
+            width: 92%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+        }
+
+        .confirm-icon {
+            font-size: 44px;
+            text-align: center;
+            margin-bottom: 14px;
+        }
+
+        .confirm-title {
+            font-size: 18px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .confirm-msg {
+            font-size: 13px;
+            color: var(--text-muted);
+            text-align: center;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .confirm-msg strong {
+            color: var(--danger);
+        }
+
+        .confirm-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .confirm-actions button {
+            flex: 1;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .confirm-cancel {
+            background: var(--surface2);
+            color: var(--text);
+        }
+
+        .confirm-cancel:hover {
+            background: var(--border);
+        }
+
+        .confirm-ok {
+            background: var(--danger);
+            border-color: var(--danger);
+            color: #fff;
+        }
+
+        .confirm-ok:hover {
+            background: #b71c1c;
+        }
+
+        /* Loading spinner */
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .spin {
+            display: inline-block;
+            animation: spin 0.8s linear infinite;
+        }
+
+        /* Responsive */
+        @media (max-width: 1100px) {
+            .stats-bar {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sos-panel {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ═══════════ TOPBAR ═══════════ -->
+    <div class="topbar">
+        <div class="topbar-brand">🛡️ Admin Live Monitoring</div>
+        <div class="topbar-spacer"></div>
+        <span class="topbar-meta">👤 {{ user.username }}</span>
+        <a href="/accounts/admin-dashboard/" class="btn btn-sm">⬅ Dashboard</a>
+        <button class="btn btn-sm btn-danger" onclick="window.location.href='/accounts/logout/'">🚪 Logout</button>
+    </div>
+
+    <!-- ═══════════ STATS BAR ═══════════ -->
+    <div class="stats-bar">
+        <div class="stat-item s-tourists">
+            <div class="stat-icon">👥</div>
+            <div>
+                <div class="stat-value" id="statTourists">{{ total_tourists }}</div>
+                <div class="stat-label">Registered Tourists</div>
+            </div>
+        </div>
+        <div class="stat-item s-danger">
+            <div class="stat-icon">⚠️</div>
+            <div>
+                <div class="stat-value" id="statDanger">0</div>
+                <div class="stat-label">In Danger Zones</div>
+            </div>
+        </div>
+        <div class="stat-item s-sos">
+            <div class="stat-icon">🆘</div>
+            <div>
+                <div class="stat-value" id="statSOS">0</div>
+                <div class="stat-label">SOS Alerts Today</div>
+            </div>
+        </div>
+        <div class="stat-item s-zones">
+            <div class="stat-icon">🗺️</div>
+            <div>
+                <div class="stat-value" id="statZones">{{ total_danger_zones }}</div>
+                <div class="stat-label">Active Danger Zones</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ MAIN ═══════════ -->
+    <div class="main">
+
+        <!-- MAP -->
+        <div class="map-wrap">
+            <div id="map"></div>
+            <div class="map-badge" id="mapBadge">🔄 Updating…</div>
+
+            <!-- Tourist Detail Slide-Over -->
+            <div class="detail-panel" id="detailPanel">
+                <div class="detail-header">
+                    <div class="detail-avatar" id="detailAvatar">?</div>
+                    <div style="flex:1;">
+                        <h3 id="detailName">Tourist</h3>
+                        <div id="detailStatusPill"></div>
+                    </div>
+                    <button class="detail-close" onclick="closeDetail()">✕</button>
+                </div>
+
+                <div class="detail-body" id="detailBody">
+                    <p style="color:var(--text-muted);font-size:13px;">Loading…</p>
+                </div>
+
+                <div class="detail-footer">
+                    <button class="btn-delete-tourist" id="btnDeleteTourist" onclick="confirmDelete()">
+                        🗑️ Permanently Delete Tourist
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SOS PANEL -->
+        <div class="sos-panel">
+            <div class="sos-header">
+                <h3>🆘 Live SOS Alerts</h3>
+                <span class="sos-badge" id="sosBadgeCount">0</span>
+            </div>
+            <div class="sos-filters">
+                <button class="filter-btn active" id="fAll" onclick="setFilter('all')">All</button>
+                <button class="filter-btn" id="fPending" onclick="setFilter('pending')">Pending</button>
+                <button class="filter-btn" id="fResponded" onclick="setFilter('responded')">Responded</button>
+                <button class="filter-btn" id="fClosed" onclick="setFilter('closed')">Closed</button>
+            </div>
+            <div class="sos-list" id="sosList">
+                <div class="sos-empty">
+                    <div class="sos-empty-icon">✅</div>No SOS alerts today
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ═══════════ DELETE CONFIRM DIALOG ═══════════ -->
+    <div class="confirm-overlay" id="confirmOverlay">
+        <div class="confirm-dialog">
+            <div class="confirm-icon">⚠️</div>
+            <div class="confirm-title">Delete Tourist Account?</div>
+            <div class="confirm-msg">
+                This will <strong>permanently delete</strong> the account of
+                <strong id="confirmName">—</strong>,
+                all their SOS records, and revoke all active sessions.
+                <br><br>This action <strong>cannot be undone.</strong>
+            </div>
+            <div class="confirm-actions">
+                <button class="confirm-cancel" onclick="closeConfirm()">Cancel</button>
+                <button class="confirm-ok" id="confirmOkBtn" onclick="executeDeletion()">Yes, Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // ================================================================
+        // STATE
+        // ================================================================
+        let map;
+        let touristMarkers = {};   // { id: marker }
+        let dangerCircles = [];
+        let helpMarkers = [];
+        let lastSOSCount = 0;
+        let allSosAlerts = [];
+        let sosFilter = 'all';
+        let selectedTouristId = null;
+
+        // ================================================================
+        // MAP INIT
+        // ================================================================
+        function initMap() {
+            map = L.map('map', { zoomControl: true }).setView([10.5276, 76.2144], 13);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+
+            loadAllData();
+            setInterval(loadAllData, 6000);   // refresh every 6s
+        }
+
+        // ================================================================
+        // LOAD ALL DATA
+        // ================================================================
+        function loadAllData() {
+            document.getElementById('mapBadge').style.display = 'block';
+
+            Promise.all([
+                fetch('/accounts/admin/api/live-tourists/').then(r => r.json()),
+                fetch('/accounts/admin/api/danger-zones/').then(r => r.json()),
+                fetch('/accounts/admin/api/help-centers/').then(r => r.json()),
+                fetch('/accounts/admin/api/live-sos/').then(r => r.json()),
+                fetch('/accounts/admin/api/dashboard-stats/').then(r => r.json()),
+            ])
+                .then(([tourists, zones, centers, sos, stats]) => {
+                    updateTouristMarkers(tourists.tourists || []);
+                    updateDangerZones(zones.danger_zones || []);
+                    updateHelpCenters(centers.help_centers || []);
+                    updateSOSPanel(sos.sos_alerts || []);
+                    updateStats(stats.stats || {});
+                })
+                .catch(e => console.error('Load error:', e))
+                .finally(() => { document.getElementById('mapBadge').style.display = 'none'; });
+        }
+
+        // ================================================================
+        // TOURIST MARKERS
+        // ================================================================
+        function updateTouristMarkers(tourists) {
+            // Remove markers for tourists no longer in list
+            const ids = new Set(tourists.map(t => t.id));
+            Object.keys(touristMarkers).forEach(id => {
+                if (!ids.has(parseInt(id))) {
+                    map.removeLayer(touristMarkers[id]);
+                    delete touristMarkers[id];
+                }
+            });
+
+            tourists.forEach(t => {
+                const color = t.status === 'sos' ? '#ff1744' : t.status === 'danger' ? '#e53935' : '#3fb950';
+                const emoji = t.status === 'sos' ? '🆘' : t.status === 'danger' ? '⚠️' : '✓';
+                const pulse = t.status === 'sos' || t.status === 'danger';
+
+                const iconHtml = `
+            <div style="position:relative;">
+                ${pulse ? `<div style="position:absolute;inset:-5px;border-radius:50%;background:${color};opacity:0.25;animation:ping 1.5s ease-in-out infinite;"></div>` : ''}
+                <div style="background:${color};width:32px;height:32px;border-radius:50%;border:3px solid #fff;
+                    display:flex;align-items:center;justify-content:center;font-size:15px;
+                    box-shadow:0 3px 10px rgba(0,0,0,0.5);cursor:pointer;">
+                    ${emoji}
+                </div>
+            </div>`;
+
+                const icon = L.divIcon({ className: '', html: iconHtml, iconSize: [32, 32], iconAnchor: [16, 16] });
+
+                if (touristMarkers[t.id]) {
+                    touristMarkers[t.id].setLatLng([t.latitude, t.longitude]);
+                    touristMarkers[t.id].setIcon(icon);
+                } else {
+                    const marker = L.marker([t.latitude, t.longitude], { icon })
+                        .addTo(map)
+                        .on('click', () => openTouristDetail(t.id, t));
+                    touristMarkers[t.id] = marker;
+                }
+            });
+        }
+
+        // ================================================================
+        // TOURIST DETAIL PANEL
+        // ================================================================
+        function openTouristDetail(id, basicData) {
+            selectedTouristId = id;
+            document.getElementById('detailPanel').classList.add('open');
+
+            // Show basic info immediately while fetching full detail
+            const initial = basicData.name || basicData.username;
+            document.getElementById('detailName').textContent = initial;
+            document.getElementById('detailAvatar').textContent = initial.charAt(0).toUpperCase();
+            document.getElementById('detailStatusPill').innerHTML = statusPill(basicData.status);
+            document.getElementById('detailBody').innerHTML = '<p style="color:var(--text-muted);font-size:13px;padding:8px 0;">Loading full profile…</p>';
+            document.getElementById('btnDeleteTourist').dataset.touristId = id;
+            document.getElementById('btnDeleteTourist').dataset.touristName = initial;
+
+            fetch(`/accounts/admin/api/tourist-detail/${id}/`)
+                .then(r => r.json())
+                .then(res => {
+                    if (res.status === 'success') renderDetail(res.tourist);
+                })
+                .catch(e => {
+                    document.getElementById('detailBody').innerHTML = `<p style="color:var(--danger);">Error: ${e.message}</p>`;
+                });
+        }
+
+        function renderDetail(t) {
+            document.getElementById('detailName').textContent = t.username;
+            document.getElementById('detailAvatar').textContent = t.username.charAt(0).toUpperCase();
+            document.getElementById('detailStatusPill').innerHTML = sessionPill(t.session_active);
+
+            const loc = t.last_location;
+            const locStr = loc.latitude
+                ? `${loc.latitude.toFixed(5)}, ${loc.longitude.toFixed(5)} (${loc.time_ago})`
+                : 'No location data';
+
+            let activityHtml = '';
+            if (t.activity_history.length === 0) {
+                activityHtml = '<p style="color:var(--text-muted);font-size:13px;">No activity recorded.</p>';
+            } else {
+                t.activity_history.forEach(a => {
+                    const statusColor = a.status === 'pending' ? 'var(--sos-red)' : a.status === 'responded' ? 'var(--info)' : 'var(--accent)';
+                    activityHtml += `
+                <div class="activity-item">
+                    <div class="act-type">${a.type}
+                        <span style="float:right;color:${statusColor};text-transform:capitalize;">${a.status}</span>
+                    </div>
+                    <div class="act-meta">📍 ${a.latitude.toFixed(4)}, ${a.longitude.toFixed(4)}</div>
+                    <div class="act-meta">🏥 ${a.nearest_help_center} (${a.distance_km.toFixed(2)} km)</div>
+                    <div class="act-meta" style="font-size:11px;margin-top:4px;color:var(--text-muted);">${a.time}</div>
+                </div>`;
+                });
+            }
+
+            document.getElementById('detailBody').innerHTML = `
+        <div class="detail-section">
+            <div class="detail-section-title">Account Info</div>
+            <div class="detail-field"><label>Username</label><span>${t.username}</span></div>
+            <div class="detail-field"><label>Full Name</label><span>${t.full_name}</span></div>
+            <div class="detail-field"><label>Email</label><span>${t.email}</span></div>
+            <div class="detail-field"><label>Member Since</label><span>${t.date_joined}</span></div>
+            <div class="detail-field"><label>Last Login</label><span>${t.last_login}</span></div>
+            <div class="detail-field"><label>SOS Count</label><span>${t.sos_count}</span></div>
+        </div>
+        <div class="detail-section">
+            <div class="detail-section-title">Last Known Location</div>
+            <div class="detail-field"><label>Coordinates</label><span>${locStr}</span></div>
+        </div>
+        <div class="detail-section">
+            <div class="detail-section-title">Recent Activity (last 5)</div>
+            ${activityHtml}
+        </div>`;
+
+            document.getElementById('btnDeleteTourist').dataset.touristName = t.username;
+        }
+
+        function closeDetail() {
+            document.getElementById('detailPanel').classList.remove('open');
+            selectedTouristId = null;
+        }
+
+        // ================================================================
+        // DELETE TOURIST
+        // ================================================================
+        function confirmDelete() {
+            const btn = document.getElementById('btnDeleteTourist');
+            document.getElementById('confirmName').textContent = btn.dataset.touristName;
+            document.getElementById('confirmOverlay').classList.add('open');
+        }
+
+        function closeConfirm() {
+            document.getElementById('confirmOverlay').classList.remove('open');
+        }
+
+        function executeDeletion() {
+            if (!selectedTouristId) return;
+            const okBtn = document.getElementById('confirmOkBtn');
+            okBtn.disabled = true;
+            okBtn.innerHTML = '<span class="spin">⏳</span> Deleting…';
+
+            fetch(`/accounts/admin/api/delete-tourist/${selectedTouristId}/`, {
+                method: 'DELETE',
+                headers: { 'X-CSRFToken': getCookie('csrftoken') }
+            })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.status === 'success') {
+                        // Remove marker from map
+                        if (touristMarkers[selectedTouristId]) {
+                            map.removeLayer(touristMarkers[selectedTouristId]);
+                            delete touristMarkers[selectedTouristId];
+                        }
+                        closeConfirm();
+                        closeDetail();
+                        loadAllData();   // refresh stats
+                    } else {
+                        alert('Error: ' + (res.message || 'Deletion failed.'));
+                    }
+                })
+                .catch(() => alert('Network error. Please try again.'))
+                .finally(() => {
+                    okBtn.disabled = false;
+                    okBtn.innerHTML = 'Yes, Delete';
+                });
+        }
+
+        // ================================================================
+        // DANGER ZONES
+        // ================================================================
+        function updateDangerZones(zones) {
+            dangerCircles.forEach(c => map.removeLayer(c));
+            dangerCircles = [];
+
+            zones.forEach(z => {
+                const color = z.severity === 'High' ? '#e53935' : z.severity === 'Medium' ? '#f0883e' : '#ffc107';
+                const circle = L.circle([z.latitude, z.longitude], {
+                    color, fillColor: color, fillOpacity: 0.18, radius: z.radius, weight: 2
+                }).addTo(map)
+                    .bindPopup(`<b>⚠️ ${z.name}</b><br><b>Severity:</b> <span style="color:${color}">${z.severity}</span><br><b>Type:</b> ${z.risk_type}<br><b>Radius:</b> ${z.radius}m`);
+                dangerCircles.push(circle);
+            });
+        }
+
+        // ================================================================
+        // HELP CENTERS
+        // ================================================================
+        function updateHelpCenters(centers) {
+            helpMarkers.forEach(m => map.removeLayer(m));
+            helpMarkers = [];
+
+            centers.forEach(c => {
+                const emoji = c.type === 'Police Station' ? '🚓' : c.type === 'Hospital' ? '🏥' : 'ℹ️';
+                const icon = L.divIcon({ className: '', html: `<div style="font-size:26px;">${emoji}</div>`, iconSize: [28, 28] });
+                const m = L.marker([c.latitude, c.longitude], { icon })
+                    .addTo(map)
+                    .bindPopup(`<b>${emoji} ${c.name}</b><br><b>Type:</b> ${c.type}${c.description ? '<br>' + c.description : ''}`);
+                helpMarkers.push(m);
+            });
+        }
+
+        // ================================================================
+        // SOS PANEL
+        // ================================================================
+        function setFilter(f) {
+            sosFilter = f;
+            ['all', 'pending', 'responded', 'closed'].forEach(k => {
+                document.getElementById('f' + k.charAt(0).toUpperCase() + k.slice(1)).classList.toggle('active', k === f);
+            });
+            renderSOSList(allSosAlerts);
+        }
+
+        function updateSOSPanel(alerts) {
+            const isNew = alerts.length > lastSOSCount;
+            if (isNew && lastSOSCount > 0) playBeep();
+            lastSOSCount = alerts.length;
+            allSosAlerts = alerts;
+            renderSOSList(alerts);
+            document.getElementById('sosBadgeCount').textContent = alerts.filter(a => a.status === 'pending').length;
+        }
+
+        function renderSOSList(alerts) {
+            const filtered = sosFilter === 'all' ? alerts : alerts.filter(a => a.status === sosFilter);
+            const list = document.getElementById('sosList');
+
+            if (filtered.length === 0) {
+                list.innerHTML = `<div class="sos-empty"><div class="sos-empty-icon">✅</div>No ${sosFilter === 'all' ? '' : sosFilter + ' '}SOS alerts today</div>`;
+                return;
+            }
+
+            list.innerHTML = filtered.map((s, i) => `
+        <div class="sos-item ${s.status}${i === 0 && s.status === 'pending' ? ' new-sos' : ''}">
+            <div class="sos-name">👤 ${s.tourist_name} <span style="font-size:11px;color:var(--text-muted);">@${s.tourist_username}</span></div>
+            <div class="sos-meta"><strong>📍</strong> ${s.latitude.toFixed(5)}, ${s.longitude.toFixed(5)}</div>
+            <div class="sos-meta"><strong>🏥</strong> ${s.nearest_help_center} (${s.distance_km.toFixed(2)} km)</div>
+            <div class="sos-meta"><strong>📧</strong> ${s.tourist_email}</div>
+            <div class="sos-time">🕐 ${s.created_at} · ${s.time_ago}</div>
+            <button class="sos-view-map" onclick="flyToSOS(${s.latitude}, ${s.longitude})">📍 View on Map</button>
+            <select class="sos-status-select" onchange="updateSOSStatus(${s.id}, this.value)">
+                <option value="pending"   ${s.status === 'pending' ? 'selected' : ''}>🔴 Pending</option>
+                <option value="responded" ${s.status === 'responded' ? 'selected' : ''}>🔵 Responded</option>
+                <option value="closed"    ${s.status === 'closed' ? 'selected' : ''}>🟢 Closed</option>
+            </select>
+        </div>
+    `).join('');
+        }
+
+        function flyToSOS(lat, lon) {
+            map.flyTo([lat, lon], 16, { duration: 1.2 });
+        }
+
+        function updateSOSStatus(sosId, newStatus) {
+            fetch('/accounts/admin/api/update-sos-status/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                body: JSON.stringify({ sos_id: sosId, status: newStatus })
+            })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.status === 'success') {
+                        fetch('/accounts/admin/api/live-sos/').then(r => r.json()).then(d => updateSOSPanel(d.sos_alerts || []));
+                    }
+                })
+                .catch(e => console.error(e));
+        }
+
+        // ================================================================
+        // STATS
+        // ================================================================
+        function updateStats(s) {
+            if (!s) return;
+            document.getElementById('statTourists').textContent = s.total_tourists ?? '—';
+            document.getElementById('statDanger').textContent = s.tourists_in_danger ?? '—';
+            document.getElementById('statSOS').textContent = s.total_sos_today ?? '—';
+            document.getElementById('statZones').textContent = s.total_danger_zones ?? '—';
+        }
+
+        // ================================================================
+        // HELPERS
+        // ================================================================
+        function statusPill(status) {
+            const map = { sos: ['pill-sos', '🆘 SOS'], danger: ['pill-danger', '⚠️ Danger'], safe: ['pill-safe', '✓ Safe'] };
+            const [cls, label] = map[status] || ['pill-safe', '— Unknown'];
+            return `<span class="status-pill ${cls}">${label}</span>`;
+        }
+
+        function sessionPill(active) {
+            return active
+                ? '<span class="status-pill pill-active">● Online</span>'
+                : '<span class="status-pill pill-offline">○ Offline</span>';
+        }
+
+        function getCookie(name) {
+            const val = `; ${document.cookie}`.split(`; ${name}=`);
+            if (val.length === 2) return decodeURIComponent(val.pop().split(';').shift());
+            return null;
+        }
+
+        function playBeep() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.type = 'sine'; osc.frequency.value = 1100;
+                gain.gain.setValueAtTime(0.4, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                osc.start(); osc.stop(ctx.currentTime + 0.4);
+            } catch (_) { }
+        }
+
+        // CSS pulse animation for marker rings
+        const style = document.createElement('style');
+        style.textContent = `
+    @keyframes ping {
+        0%   { transform: scale(1); opacity: 0.25; }
+        100% { transform: scale(2.2); opacity: 0; }
+    }`;
+        document.head.appendChild(style);
+
+        // ================================================================
+        // BOOT
+        // ================================================================
+        window.onload = initMap;
+    </script>
+
+</body>
+
+</html>

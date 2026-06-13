@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Edit Place</title>
+  <style>
+    input, select, textarea, button {
+      display: block;
+      margin: 10px 0;
+      padding: 8px;
+      width: 300px;
+    }
+    button {
+      width: 100px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Edit Place</h2>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <input type="text" name="name" value="{{ place.name }}" placeholder="Place Name" required>
+
+    <select name="type">
+      <option {% if place.type == "Hospital" %}selected{% endif %}>Hospital</option>
+      <option {% if place.type == "Police Station" %}selected{% endif %}>Police Station</option>
+      <option {% if place.type == "Help Center" %}selected{% endif %}>Help Center</option>
+    </select>
+
+    <input type="text" name="latitude" value="{{ place.latitude }}" placeholder="Latitude">
+    <input type="text" name="longitude" value="{{ place.longitude }}" placeholder="Longitude">
+
+    <textarea name="description" placeholder="Description">{{ place.description }}</textarea>
+
+    <button type="submit">Save Changes</button>
+  </form>
+
+  <a href="{% url 'index' %}">Back to Dashboard</a>
+</body>
+</html>
