@@ -2,7 +2,7 @@
 
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from core.models import Place, DangerZone
+from core.models import Place, DangerZone, TouristLocation
 from alerts.models import SOSAlert
 
 
@@ -98,3 +98,16 @@ class RegisterSerializer(serializers.Serializer):
             is_staff=False,
             is_superuser=False,
         )
+
+# ─────────────────────────────────────────────────────────
+# TOURIST LOCATION SERIALIZER
+# Added for Phase 1 — location tracking.
+# Does NOT affect any existing serializer.
+# ─────────────────────────────────────────────────────────
+class TouristLocationSerializer(serializers.ModelSerializer):
+    tourist_username = serializers.CharField(source='tourist.username', read_only=True)
+
+    class Meta:
+        model  = TouristLocation
+        fields = ['id', 'tourist', 'tourist_username', 'latitude', 'longitude', 'timestamp']
+        read_only_fields = ['tourist', 'timestamp']

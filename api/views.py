@@ -277,3 +277,80 @@ def api_sos(request):
         'nearest_help_center': nearest_center.name if nearest_center else 'None',
         'distance_km': round(min_distance, 2) if nearest_center else None,
     }, status=status.HTTP_201_CREATED)
+
+# ─────────────────────────────────────────────────────────
+# POST /api/location/
+# Header: Authorization: Bearer <access_token>
+# Body:   { "lat": 12.345, "lon": 67.890 }
+# Saves tourist GPS location to TouristLocation table.
+# Added for Phase 1 — does NOT touch any existing view.
+# ─────────────────────────────────────────────────────────
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_location(request):
+    from core.models import TouristLocation
+    try:
+        lat = float(request.data.get('lat') or request.data.get('latitude'))
+        lon = float(request.data.get('lon') or request.data.get('longitude'))
+    except (TypeError, ValueError):
+        return Response(
+            {'error': 'Valid lat and lon are required.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    TouristLocation.objects.create(
+        tourist=request.user,
+        latitude=lat,
+        longitude=lon,
+    )
+    return Response({'message': 'Location saved.'}, status=status.HTTP_201_CREATED)
+
+
+# ─────────────────────────────────────────────────────────
+# GET /api/admin/tourists/
+# Header: Authorization: Bearer <access_token>  (admin only)
+# Returns each tourist with their latest GPS coordinates.
+# Added for Phase 1 — does NOT touch any existing view.
+# ─────────────────────────────────────────────────────────
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsAdminUser])
+def api_admin_tourists(request):
+    from core.models import TouristLocation
+    from django.contrib.auth.models import User
+
+    tourists = User.objects.filter(is_superuser=False).order_by('username')
+    result = []
+    for t in tourists:
+        latest = t.locations.first()  # ordered by -timestamp in Meta
+        result.append({
+            'id':        t.id,
+            'username':  t.username,
+            'email':     t.email,
+            'last_location': {
+                'latitude':  float(latest.latitude)  if latest else None,
+                'longitude': float(latest.longitude) if latest else None,
+                'timestamp': latest.timestamp.isoformat() if latest else None,
+            }
+        })
+    return Response({
+        'count': len(result),
+        'tourists': result,
+    }, status=status.HTTP_200_OK)
+
+
+# ─────────────────────────────────────────────────────────
+# GET /api/admin/sos/
+# Header: Authorization: Bearer <access_token>  (admin only)
+# Returns ALL SOS alerts across all tourists.
+# Added for Phase 1 — does NOT touch any existing view.
+# ─────────────────────────────────────────────────────────
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsAdminUser])
+def api_admin_sos(request):
+    from .serializers import SOSAlertSerializer
+    all_sos = SOSAlert.objects.all().order_by('-created_at')
+    serializer = SOSAlertSerializer(all_sos, many=True)
+    return Response({
+        'count': all_sos.count(),
+        'sos_alerts': serializer.data,
+    }, status=status.HTTP_200_OK)

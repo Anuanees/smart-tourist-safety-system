@@ -21,4 +21,9 @@ urlpatterns = [
     path('places/',          views.api_places,          name='api_places_list'),
     path('help-centers/',    views.api_help_centers,    name='api_help_centers_list'),
     path('sos/',             views.api_sos,             name='api_sos'),
+
+    # ── Phase 1: Location tracking & Admin views ──
+    path('location/',                views.api_location,          name='api_location'),
+    path('admin/tourists/',          views.api_admin_tourists,    name='api_admin_tourists'),
+    path('admin/sos/',               views.api_admin_sos,         name='api_admin_sos'),
 ]
