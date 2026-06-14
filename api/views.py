@@ -354,3 +354,83 @@ def api_admin_sos(request):
         'count': all_sos.count(),
         'sos_alerts': serializer.data,
     }, status=status.HTTP_200_OK)
+
+
+# ─────────────────────────────────────────────────────────
+# DELETE /api/admin/tourists/<user_id>/
+# Header: Authorization: Bearer <access_token>  (admin only)
+# Permanently deletes a tourist account and all linked records.
+# Protected: cannot delete admin or staff accounts.
+# ─────────────────────────────────────────────────────────
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated, IsAdminUser])
+def api_admin_delete_tourist(request, user_id):
+    try:
+        tourist = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return Response({'error': 'Tourist not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Protect admin and staff accounts from deletion
+    if tourist.is_superuser or tourist.is_staff:
+        return Response(
+            {'error': 'Cannot delete admin or staff accounts.'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    username = tourist.username
+    # CASCADE: SOSAlert and TouristLocation records are deleted automatically
+    # because both models use ForeignKey(User, on_delete=models.CASCADE).
+    tourist.delete()
+    return Response(
+        {'message': f'Tourist "{username}" deleted successfully.'},
+        status=status.HTTP_200_OK
+    )
+
+
+# ─────────────────────────────────────────────────────────
+# PATCH /api/admin/sos/<sos_id>/
+# Header: Authorization: Bearer <access_token>  (admin only)
+# Body:   { "status": "responded" | "resolved" | "pending" }
+# Updates the status of an existing SOSAlert.
+# No schema changes — reuses existing SOSAlert model + SOSAlertSerializer.
+# Added for Phase 5 — does NOT touch any existing view.
+# ─────────────────────────────────────────────────────────
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated, IsAdminUser])
+def api_admin_sos_update(request, sos_id):
+    try:
+        sos = SOSAlert.objects.get(pk=sos_id)
+    except SOSAlert.DoesNotExist:
+        return Response(
+            {'error': 'SOS alert not found.'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    new_status = request.data.get('status', '').strip()
+    if not new_status:
+        return Response(
+            {'error': 'status field is required.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    allowed = ('pending', 'responded', 'resolved')
+    if new_status not in allowed:
+        return Response(
+            {'error': f'Invalid status. Use one of: {", ".join(allowed)}.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        sos.status = new_status
+        sos.save(update_fields=['status'])
+    except Exception as exc:
+        return Response(
+            {'error': f'Failed to update SOS status: {exc}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+    serializer = SOSAlertSerializer(sos)
+    return Response(
+        {'message': 'Status updated successfully.', 'sos': serializer.data},
+        status=status.HTTP_200_OK
+    )

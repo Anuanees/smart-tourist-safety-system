@@ -23,7 +23,9 @@ urlpatterns = [
     path('sos/',             views.api_sos,             name='api_sos'),
 
     # ── Phase 1: Location tracking & Admin views ──
-    path('location/',                views.api_location,          name='api_location'),
-    path('admin/tourists/',          views.api_admin_tourists,    name='api_admin_tourists'),
-    path('admin/sos/',               views.api_admin_sos,         name='api_admin_sos'),
+    path('location/',                views.api_location,              name='api_location'),
+    path('admin/tourists/',          views.api_admin_tourists,        name='api_admin_tourists'),
+    path('admin/sos/',               views.api_admin_sos,             name='api_admin_sos'),
+    path('admin/tourists/<int:user_id>/', views.api_admin_delete_tourist, name='api_admin_delete_tourist'),
+    path('admin/sos/<int:sos_id>/',      views.api_admin_sos_update,     name='api_admin_sos_update'),
 ]
